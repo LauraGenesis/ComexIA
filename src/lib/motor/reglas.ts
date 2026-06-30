@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "../prisma";
+import { DEMO_MODE } from "../demo";
+import { REGLAS, type ReglaSeed } from "./reglas-seed";
 import { resolucionSchema, type Resolucion } from "./schema";
 import type { EntradaCaso } from "./index";
 
@@ -21,12 +23,8 @@ const norm = (s = "") =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-/** Una regla con sus relaciones cargadas. */
-type ReglaConRelaciones = Awaited<
-  ReturnType<typeof cargarReglas>
->[number];
-
-function cargarReglas() {
+/** Consulta Prisma de reglas activas con sus relaciones (define la forma). */
+function cargarReglasDb() {
   return prisma.regla.findMany({
     where: { activa: true },
     orderBy: { prioridad: "desc" },
@@ -38,6 +36,52 @@ function cargarReglas() {
       pasos: { orderBy: { orden: "asc" } },
     },
   });
+}
+
+/** Una regla con sus relaciones cargadas. */
+type ReglaConRelaciones = Awaited<
+  ReturnType<typeof cargarReglasDb>
+>[number];
+
+/**
+ * Adapta una regla semilla (ReglaSeed) a la misma forma que devuelve Prisma con
+ * sus relaciones incluidas, para que el resto del archivo (coincide, similitud,
+ * aResolucion) la consuma sin cambios. Solo se usa en modo demo.
+ */
+function aReglaConRelaciones(r: ReglaSeed): ReglaConRelaciones {
+  return {
+    nombre: r.nombre,
+    prioridad: r.prioridad ?? 0,
+    productoMatch: r.productoMatch ?? null,
+    hsTaric: r.hsTaric ?? null,
+    origen: r.origen ?? null,
+    destino: r.destino ?? null,
+    tipo: r.tipo ?? null,
+    resumen: r.resumen,
+    confianza: r.confianza,
+    requisitosSanitarios: r.requisitosSanitarios?.join("\n") ?? null,
+    verificar: r.verificar?.join("\n") ?? null,
+    documentos: r.documentos.map((d) => ({ doc: d.doc, estado: d.estado })),
+    normativa: r.normativa.map((n) => ({
+      titulo: n.titulo,
+      fuente: n.fuente,
+      url: n.url ?? null,
+      relevancia: n.relevancia ?? null,
+    })),
+    riesgos: r.riesgos.map((ri) => ({ tipo: ri.tipo, nivel: ri.nivel, motivo: ri.motivo })),
+    alertas: (r.alertas ?? []).map((a) => ({ severidad: a.severidad, mensaje: a.mensaje })),
+    pasos: r.pasos.map((texto) => ({ texto })),
+  } as unknown as ReglaConRelaciones;
+}
+
+async function cargarReglas(): Promise<ReglaConRelaciones[]> {
+  // Modo demo (sin BD): reglas en memoria, ya ordenadas por prioridad desc.
+  if (DEMO_MODE) {
+    return REGLAS.map(aReglaConRelaciones).sort(
+      (a, b) => b.prioridad - a.prioridad,
+    );
+  }
+  return cargarReglasDb();
 }
 
 /** Criterios del caso ya normalizados, para comparar contra cada regla. */

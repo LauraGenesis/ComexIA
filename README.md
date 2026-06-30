@@ -4,6 +4,12 @@ Plataforma de logística internacional y comercio exterior potenciada por IA.
 Resuelve operaciones aduaneras (importación, exportación, tránsito) y genera la
 documentación necesaria — incluso para casos nuevos sin plantilla previa.
 
+🔗 **Demo en vivo:** _(pendiente de desplegar)_
+
+> La demo corre en **modo demo** (`DEMO_MODE=1`): sin base de datos, con datos de
+> ejemplo precargados en memoria. Se puede navegar toda la app y probar el motor;
+> los expedientes que crees no persisten entre recargas. Ver [Modo demo](#modo-demo-sin-base-de-datos).
+
 ## Stack
 
 - **Next.js 16** (App Router) + **React 19** + **TypeScript**
@@ -123,12 +129,44 @@ Para enseñarle más comercio exterior a la plataforma, añade **reglas** a la b
 
 - **Visual:** `npx prisma studio` → tabla `Regla` (y sus `ReglaDocumento`,
   `ReglaNorma`, `ReglaRiesgo`, `ReglaAlerta`, `ReglaPaso`).
-- **Por seed:** añade un objeto al array `REGLAS` de `prisma/seed.ts` y ejecuta
-  `npm run db:seed`. Los 4 casos que trae el seed sirven de plantilla.
+- **Por seed:** añade un objeto al array `REGLAS` de `src/lib/motor/reglas-seed.ts`
+  y ejecuta `npm run db:seed`. Los casos que trae el seed sirven de plantilla.
+  (Ese mismo array alimenta el motor en [modo demo](#modo-demo-sin-base-de-datos).)
 
 Una `Regla` define unos criterios de coincidencia (todos opcionales; basta uno)
 y la resolución resultante. Los criterios solo descartan la regla si el caso
 aporta un valor que los contradice; si falta el dato, no bloquean.
+
+## Modo demo (sin base de datos)
+
+Para el despliegue público (p. ej. **Vercel**, serverless y sin disco
+persistente) la app puede arrancar sin Prisma/SQLite con la variable de entorno:
+
+```bash
+DEMO_MODE=1
+```
+
+En este modo la capa de datos (`src/lib/repo.ts`) y el motor de reglas
+(`src/lib/motor/reglas.ts`) leen de **datos en memoria** sembrados desde
+`src/lib/data.ts` y `src/lib/motor/reglas-seed.ts`. El cliente Prisma no se carga
+nunca (import dinámico en `repo.ts`). Consecuencias:
+
+- Se navega toda la app con datos de ejemplo y el motor de reglas funciona igual.
+- Los expedientes y documentos que crees viven en memoria y **no persisten**
+  entre invocaciones (cada arranque vuelve al estado semilla).
+- Sin `ANTHROPIC_API_KEY`, los casos sin regla usan el fallback genérico (gratis).
+
+Sin la variable, en local todo funciona contra SQLite con persistencia real.
+
+### Desplegar en Vercel
+
+1. Importa el repositorio en [vercel.com](https://vercel.com) (framework Next.js,
+   detección automática).
+2. Define las variables de entorno del proyecto:
+   - `DEMO_MODE` = `1`
+   - `DATABASE_URL` = `file:./dev.db` (valor de relleno; no se usa en demo, pero
+     el esquema Prisma lo exige para `prisma generate` en el build).
+3. Deploy. El `postinstall` (`prisma generate`) prepara el cliente en el build.
 
 ## Documentación
 

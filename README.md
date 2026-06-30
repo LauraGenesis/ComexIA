@@ -4,7 +4,7 @@ Plataforma de logística internacional y comercio exterior potenciada por IA.
 Resuelve operaciones aduaneras (importación, exportación, tránsito) y genera la
 documentación necesaria — incluso para casos nuevos sin plantilla previa.
 
-🔗 **Demo en vivo:** _(pendiente de desplegar)_
+🔗 **Demo en vivo:** **[comexia-eta.vercel.app](https://comexia-eta.vercel.app)**
 
 > La demo corre en **modo demo** (`DEMO_MODE=1`): sin base de datos, con datos de
 > ejemplo precargados en memoria. Se puede navegar toda la app y probar el motor;

@@ -1,0 +1,172 @@
+// ComexIA — Esquema de datos (Prisma + SQLite)
+// Preparado para persistir expedientes, documentos y alertas.
+// La app funciona hoy con datos en memoria (src/lib/data.ts); este esquema
+// es el destino de la persistencia real.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Expediente {
+  id           String   @id @default(cuid())
+  ref          String   @unique
+  producto     String
+  tipo         String // importacion | exportacion | transito
+  regimen      String   @default("definitivo")
+  origen       String // ISO2
+  destino      String // ISO2
+  hsTaric      String?
+  incoterm     String?
+  transporte   String?
+  valor        Float?
+  estado       String   @default("borrador")
+  riesgo       String   @default("medio")
+  confianza    Float?
+  proximaAccion String?
+  resolucion   String? // JSON serializado de la Resolucion del motor
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  documentos Documento[]
+  alertas    Alerta[]
+  eventos    Evento[]
+}
+
+model Documento {
+  id           String   @id @default(cuid())
+  nombre       String
+  estado       String   @default("pendiente")
+  obligatorio  Boolean  @default(false)
+  datos        String? // JSON con los campos del documento
+  expediente   Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  expedienteId String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Alerta {
+  id           String   @id @default(cuid())
+  severidad    String // info | advertencia | critica
+  titulo       String
+  detalle      String?
+  leida        Boolean  @default(false)
+  expediente   Expediente? @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  expedienteId String?
+  createdAt    DateTime @default(now())
+}
+
+// Historial inmutable de eventos (auditoría) — RN-10
+model Evento {
+  id           String   @id @default(cuid())
+  actor        String // usuario | IA
+  accion       String
+  expediente   Expediente @relation(fields: [expedienteId], references: [id], onDelete: Cascade)
+  expedienteId String
+  createdAt    DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// BASE DE CONOCIMIENTO (motor SIN IA)
+//
+// Cada Regla describe un caso conocido de comercio exterior: unos criterios
+// de coincidencia (producto, TARIC, origen, destino, tipo) y la resolución
+// que el motor debe devolver. Es la fuente PRINCIPAL del motor: gratis y sin
+// depender de Claude. Para ampliar el conocimiento basta con añadir filas
+// (Regla + sus documentos/normativa/riesgos/alertas/pasos), no tocar código.
+// ─────────────────────────────────────────────────────────────────────────
+
+model Regla {
+  id        String  @id @default(cuid())
+  nombre    String // etiqueta legible: "Sésamo desde India"
+  prioridad Int     @default(0) // si varias coinciden, gana la de mayor prioridad
+  activa    Boolean @default(true)
+
+  // ── Criterios de coincidencia (opcionales; null = no filtra por ese campo) ──
+  productoMatch String? // subcadena normalizada a buscar en el texto: "sesamo", "lampara"
+  hsTaric       String? // prefijo TARIC: "9405"
+  origen        String? // ISO2: "CN"
+  destino       String? // ISO2: "ES"
+  tipo          String? // importacion | exportacion | transito
+
+  // ── Resolución resultante (mismo contrato que Resolucion en motor/schema.ts) ──
+  resumen              String
+  confianza            Float   @default(0.8)
+  requisitosSanitarios String? // una línea por requisito (separadas por \n)
+  verificar            String? // una línea por punto a verificar (separadas por \n)
+
+  documentos ReglaDocumento[]
+  normativa  ReglaNorma[]
+  riesgos    ReglaRiesgo[]
+  alertas    ReglaAlerta[]
+  pasos      ReglaPaso[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReglaDocumento {
+  id      String @id @default(cuid())
+  doc     String
+  estado  String @default("obligatorio") // obligatorio | recomendado | condicional
+  regla   Regla  @relation(fields: [reglaId], references: [id], onDelete: Cascade)
+  reglaId String
+}
+
+model ReglaNorma {
+  id         String  @id @default(cuid())
+  titulo     String
+  fuente     String
+  url        String?
+  relevancia String  @default("media") // alta | media | baja
+  regla      Regla   @relation(fields: [reglaId], references: [id], onDelete: Cascade)
+  reglaId    String
+}
+
+model ReglaRiesgo {
+  id      String @id @default(cuid())
+  tipo    String
+  nivel   String @default("medio") // bajo | medio | alto
+  motivo  String
+  regla   Regla  @relation(fields: [reglaId], references: [id], onDelete: Cascade)
+  reglaId String
+}
+
+model ReglaAlerta {
+  id        String @id @default(cuid())
+  severidad String @default("advertencia") // info | advertencia | critica
+  mensaje   String
+  regla     Regla  @relation(fields: [reglaId], references: [id], onDelete: Cascade)
+  reglaId   String
+}
+
+model ReglaPaso {
+  id      String @id @default(cuid())
+  orden   Int    @default(0)
+  texto   String
+  regla   Regla  @relation(fields: [reglaId], references: [id], onDelete: Cascade)
+  reglaId String
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// BIBLIOTECA DE SOPORTE (documentos grandes)
+//
+// Documentos voluminosos de referencia (normativa en PDF, casos resueltos,
+// plantillas, escaneos…). El ARCHIVO vive en disco (public/biblioteca/) para
+// no inflar SQLite; aquí solo se guardan sus metadatos y el nombre del fichero.
+// ─────────────────────────────────────────────────────────────────────────
+
+model Fuente {
+  id          String   @id @default(cuid())
+  titulo      String
+  descripcion String?
+  categoria   String   @default("General")
+  archivo     String // nombre del fichero guardado en public/biblioteca/
+  mime        String   @default("application/pdf")
+  tamano      Int      @default(0) // tamaño en bytes
+  createdAt   DateTime @default(now())
+}

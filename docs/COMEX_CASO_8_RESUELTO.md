@@ -1,0 +1,23 @@
+**COMEX CASO 8**
+
+**REPASO DE INCOTERMS**
+
+- **¿FCA incluye la descarga en el punto de entrega? ****No.**** ¿Cuál es el punto de entrega en FCA? ****Cualquier punto de la terminal de origen incluido dentro del transporte si se especifica.**
+
+- **¿Por qué los incoterms marítimos, ****FAS, FOB, CFR, CIF, no se pueden usar con contenedores en 2020?**** ****Porque los contenedores se entregan en las terminales de los puertos no cargados ****en los barcos. Y todos los incoterms marítimos obligan a cargar los barcos (FOB, CFR y CIF) o a dejar la carga junto al muelle (FAS).**** Y el riesgo de daño no se transmite del vendedor al comprador hasta que la mercancía está embarcada y sin embargo el vendedor la ha entregado al transportista mucho antes del embarque. **
+
+- **En FOB el punto de entrega es dentro del barco, ¿pero incluye el amarre y la estiba (la colocación de la carga) o basta dejarla sobre cubierta? ****Basta dejarla sobre cubierta salvo que vendedor y comprador hayan negociado o tengan por costumbre que el vendedor estiba y amarra, o que la costumbre del puerto (COP, ****Custom**** ****of**** ****the**** ****port****) incluya la obligación de estibar o amarrar por los vendedores.**
+
+- **¿Cuál es la diferencia entre el CIP 2010 y el CIP 2020? ****En CIP 2010 es ILU C; y en CIP 2020 es ILU A**
+
+- **¿El EXW obliga al vendedor a carga el transporte que lleva la mercancía a la aduana de exportación? ****No. El vendedor entrega la mercancía sin cargar, pero envasada y embalada.**
+
+- **Enumere los incoterms en que el lugar donde ****el vendedor ****ha de entregar no coincide con el punto de transmisión de riesgos del vendedor al comprador.**** ****CPT, CFR, CIF, CIP**
+
+- **Un vendedor de Madrid pacta con un comprador de Malabo (Guinea Ecuatorial) la venta de unas mercancías en condiciones CIP Malabo Incoterms 2020. La mercancía irá por avión desde Barajas. ¿Dónde ha de entregar el vendedor la mercancía? ****En Malabo sin descargar. ****¿En qué momento el vendedor español transmite el riesgo de pérdida al comprador de Guinea? ****Cuando entregue la mercancía a la compañía aérea en Barajas.**** ¿Quién contrata la compañía aérea? ****El vendedor.  ****¿el vendedor ha de contratar un seguro? ****ILU A que cubra 110% del valor de la mercancía. ****Y si en vez de CIP hubieran contratado CPT, ¿cuál sería la diferencia? ****En CPT el seguro lo ha de contratar el comprador guineano si lo desea.**** ****¿Por qué no se puede usar en esta operación el incoterm CIF? ****Porque el CIF es marítimo y en este caso la mercancía va por avión.**
+
+- **Un vendedor ucraniano pacta con un comprador español la venta de un cargamento de trigo y pactan condiciones FOB puerto de Odessa ****incoterm 2020. ¿Pueden pactar FOB para este tipo de cargamento? ****Sí, porque el trigo no va en contenedor sino a granel.**
+
+- **Un vendedor colombiano vende a un comprador español una mercancía en condiciones DAP Tres Cantos (Madrid)****. La mercancía llega de Colombia a la aduana de Coslada donde se tramita la importación. ¿Quién ha de tramitar esta importación? ****El español. ****Y ****¿en qué punto el vendedor colombiano transmite el riesgo de daño de la mercancía al vendedor español? ****En el lugar de llegada en Tres Cantos sin descarga.**** ¿Qué diferencia había si en vez de DAP acordasen DDP? ****El colombiano asume los trámites de importación en Coslada, pero sigue siendo sin descarga en Tres Cantos. ****¿Qué diferencia había si en vez de DAP acordasen ****DPU****?**** ****El comprador español tramita la importación y el colombiano entrega la mercancía con descarga en Tres Cantos**
+
+- ** Un vendedor español vende una mercancía a un comprador en Turquía en condiciones DAP Ankara incoterms 2020 donde se tramitará la aduana de importación. ¿Quién tramitará esta aduana de importación? ****El comprador turco.**** La mercancía va por carretera; cuando el camión cruce la frontera entre Bulgaria y Turquía deberá hacer un tránsito, ¿quién gestiona esta aduana de tránsito? ****Las aduanas de tránsito las tramita el que contrata el transporte principal que en este caso como es DAP el español.**** ¿Y si ****el incoterms**** fuera FCA Coslada Incoterms 2020, quién pasaría la aduana de tránsito entre Bulgaria y Turquía? ****El comprador turco porque el transporte hasta el destino lo contrata el comprador, y el que contrata el transporte internacional se hace cargo de las aduanas de tránsito.**

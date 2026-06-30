@@ -1,0 +1,243 @@
+@import "tailwindcss";
+
+/*
+ * ComexIA — Sistema de diseño
+ * Paleta: logística + tecnología + confianza (ver docs/ESPECIFICACION_PRODUCTO.md §16)
+ */
+
+@theme {
+  /* Marca — índigo (escala completa, calibrada para contraste AA) */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #6378e0;
+  --color-brand-500: #3b5bdb;
+  --color-brand-600: #2842b8;
+  --color-brand-700: #1e3a8a; /* primario */
+  --color-brand-800: #1b3273;
+  --color-brand-900: #172554;
+
+  /* Acento IA / tecnología (cian-turquesa) */
+  --color-accent-50: #ecfeff;
+  --color-accent-100: #cffafe;
+  --color-accent-200: #a5f3fc;
+  --color-accent-300: #67e8f9;
+  --color-accent-400: #22d3ee;
+  --color-accent-500: #06b6d4; /* acento */
+  --color-accent-600: #0891b2;
+  --color-accent-700: #0e7490;
+
+  /* Estados semánticos */
+  --color-success: #15803d;
+  --color-success-bg: #dcfce7;
+  --color-warning: #b45309;
+  --color-warning-bg: #fef3c7;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-info: #2563eb;
+  --color-info-bg: #dbeafe;
+
+  /* Neutros */
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-faint: #94a3b8;
+  --color-line: #e2e8f0;
+  --color-line-strong: #cbd5e1;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #f1f5f9;
+  --color-canvas: #f8fafc;
+
+  /* Tipografía */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radios */
+  --radius-card: 0.75rem;
+
+  /* Sombras (tintadas hacia el índigo de marca para cohesión) */
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.05);
+  --shadow-md: 0 4px 12px -2px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.05);
+  --shadow-lg: 0 12px 28px -6px rgb(15 23 42 / 0.12), 0 4px 10px -4px rgb(15 23 42 / 0.07);
+  --shadow-brand: 0 6px 20px -4px rgb(30 58 138 / 0.28);
+}
+
+:root {
+  --background: var(--color-canvas);
+  --foreground: var(--color-ink);
+}
+
+/*
+ * Modo oscuro. Como toda la app se pinta con los tokens --color-*, basta
+ * redefinirlos bajo .dark (aplicada en <html>) para reescribir el tema entero.
+ * Mantenemos la escala de marca (brand/accent) intacta para los FONDOS de botón
+ * (bg-brand-700 + texto blanco siguen con buen contraste) y solo reapuntamos el
+ * TEXTO de marca a tonos claros para que los enlaces se lean sobre fondo oscuro.
+ */
+:root.dark {
+  /* Neutros */
+  --color-ink: #e6edf6;
+  --color-muted: #97a6ba;
+  --color-faint: #6b7a90;
+  --color-line: #243044;
+  --color-line-strong: #36465f;
+  --color-surface: #131c2e;
+  --color-surface-sunken: #0c1424;
+  --color-canvas: #0a1120;
+
+  /* Estados: texto más claro y fondos más oscuros para legibilidad */
+  --color-success: #4ade80;
+  --color-success-bg: #0c2c1c;
+  --color-warning: #fbbf24;
+  --color-warning-bg: #2f2408;
+  --color-danger: #f87171;
+  --color-danger-bg: #371519;
+  --color-info: #60a5fa;
+  --color-info-bg: #0f2247;
+
+  /* Fondos suaves de marca (chips, badges, burbujas) oscurecidos */
+  --color-brand-50: #16203a;
+  --color-brand-100: #1b2747;
+  --color-accent-50: #0a2730;
+  --color-accent-100: #0e3540;
+}
+
+/* Texto/iconos de marca: claros en oscuro (no afecta a los fondos de botón). */
+:root.dark .text-brand-700 {
+  color: var(--color-brand-300);
+}
+:root.dark .text-accent-600,
+:root.dark .text-accent-500 {
+  color: var(--color-accent-300);
+}
+
+:root.dark ::selection {
+  background: var(--color-brand-300);
+  color: var(--color-brand-900);
+}
+
+/*
+ * La hoja del DUA es un documento "en papel" (fondo blanco fijo): debe verse
+ * siempre clara, también en modo oscuro. Restablecemos los neutros a sus valores
+ * claros dentro de .dua-print para que la tinta (text/border-ink) sea oscura.
+ */
+.dark .dua-print {
+  --color-ink: #0f172a;
+  --color-muted: #64748b;
+  --color-faint: #94a3b8;
+  --color-line: #e2e8f0;
+  --color-line-strong: #cbd5e1;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Selección de texto con tono de marca */
+::selection {
+  background: var(--color-brand-100);
+  color: var(--color-brand-900);
+}
+
+/* Anillo de foco accesible y consistente en toda la app */
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Scrollbar fina y discreta (WebKit) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border: 3px solid var(--color-canvas);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-faint);
+}
+
+/* Degradado de marca para acentos IA */
+.bg-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brand-700) 0%,
+    var(--color-accent-500) 100%
+  );
+}
+
+.text-brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brand-700) 0%,
+    var(--color-accent-500) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Halo sutil para zonas/acciones impulsadas por IA */
+.bg-ai-soft {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-brand-50) 0%,
+    var(--color-accent-50) 100%
+  );
+}
+
+.ring-ai {
+  box-shadow: 0 0 0 1px var(--color-accent-200), var(--shadow-md);
+}
+
+/* Cabecera de página/sección con malla de marca muy tenue */
+.bg-canvas-mesh {
+  background-color: var(--color-canvas);
+  background-image:
+    radial-gradient(40rem 20rem at 100% -10%, rgb(6 182 212 / 0.06), transparent 60%),
+    radial-gradient(36rem 18rem at -10% 0%, rgb(30 58 138 / 0.06), transparent 55%);
+}
+
+/* Hoja A4 en pantalla para el documento extenso. */
+.dua-print {
+  width: 100%;
+  max-width: 794px; /* ~A4 a 96dpi */
+}
+
+/* Impresión: el PDF (A4) solo contiene la vista previa del documento. */
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #dua-preview,
+  #dua-preview * {
+    visibility: visible;
+  }
+  #dua-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

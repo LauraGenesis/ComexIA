@@ -1,0 +1,42 @@
+DUA 6 IMPORTACIÓN
+
+COMUNIDAD EUROPEA
+
+| 2 EXPEDIDOR/EXPORTADOR EORI Nº 6546789 Boulder and Co. Energy de 254 Str. Denver (Colorado, USA) | 1 D E C L A R A C I Ó N | ADUANA DE DESTINO 22ES002801 3 XXXXXX 7 Número de referencia |
+| --- | --- | --- |
+|  | IM | A |  |  |
+|  | 3 FORMULARIOS | 4 LISTA DE CARGA |  |
+|  |  |  |  |  |
+|  | 5 PARTIDAS 1 | 6 TOTAL BULTOS 5 pallets |  |
+| 8 DESTINATARIO EORI Nº ENDESA | 5 RESPONSABLE FINANCIERO |
+|  | 10 PAÍS ULT. | 11 PAÍS TRANSACCION | 12 ELEMENTOS DE VALOR | 13 PAC |
+|  |  |  |  | PROCED |  |  |
+| 14 DECLARANTE/REPRESENTANTE EORI Nº [1] El destinatario | 15 PAIS EXPEDICIÓN/EXPORTACIÓN | 15 COD PAÍS EXP/EXP | 17 COD PAIS DESTINO |
+|  |  | a) US | b) | a) | b) 28 |
+|  | 16 PAÍS DE ORIGEN | 17 PAÍS DE DESTINO |
+| 18 IDENTIDAD DEL MEDIO DE TRANSPORTE A LA LLEGADA | 19 CTR. 1 | 20 CONDICIONES DE ENTREGA |
+| vuelo nº 4589 |  |  | CIF | aeropuerto de Barajas incoterms 2020 | 1 |
+| 21 IDENTIDAD DEL MEDIO DE TRANSPORTE ACTIVO EN FRONTERA | US | 22 DIVISA E IMPORTE TOTAL EN FACTURA USD 1000000 | 23 TIPO DE CAMBIO | 24 NATURALEZA |
+|  |  |  |  | 6 | 1 Uso temporal por alquiler por menos de 24 meses | TRANSACCIÓN |
+| 25 MODO TRANSPORTE | 26 MODO TRANSPORTE | 27 LUGAR DE DESCARGA | 28 DATOS FINANCIEROS Y BANCARIOS |
+| 4 | EN FRONTERA |  | INTERIOR |  |  |
+| 29 ADUANA DE ENTRADA | 30 LOCALIZACIÓN DE LAS MERCANCÍAS ADT o lugar aprobado |  |
+| 31 BULTOS Y DESCRIPCIÓN DE LA MERCANCÍA 32 PARTIDA 1 turbina hidráulica desmontado de 15000 KW de 7000 Kgs QP 5 cajas de madera ordinaria de 20 Kgs cada una OB 5 europallets de 25 Kgs 2 contenedores AMA 547858 5 FCL y AMA 258785 6 FCL | 33 CÓDIGO DE LAS MERCANCÍAS |
+|  | 84101300 | 00 |  |  |  |
+|  | 34 CÓD PAÍS ORIGEN | 35 MASA BRUTA KGS 7225 | 36 PREFERENCIA 1 00 |
+|  | US |  |  |  |
+|  | 37 RÉGIMEN | 38 MASA NETA KGS 7000 | 39 CONTINGENTE |
+|  | 53 00 |  |  |  |
+|  | 40 DOCUMENTO FINANCIERO PRECEDENTE DSDT | 41 UNIDADES SUPLEMENTARIAS |
+| 44 INDICACIONES ESPECIALES/DOCUMENTOS PRESENTADOS/CERTIFICADOS Y AUTORIZACIONES • N325 Factura pro forma 2415/2022 de 10 de junio, No hay factura comercial porque no hay venta • N271 Packing list 654/2022 de 10 de junio • N740 AWB 525/2022 de 13 de junio • N003 Certificado SOIVRE 123/2022 de 13 de junio • C644 Certificado ecológico 235/2022 de 14 de junio N935 DV1 Falta certificado de origen |  | 42 PRECIO DEL ARTÍCULO 920000 | 45 AJUSTE 0 |
+|  |  | 46 VALOR ESTADÍSTICO USD 1000000 * 0.9434 = 943400 € |
+| 47 CÁLCULO DE LOS TRIBUTOS | 48 APLAZAMIENTO DE PAGO | 49 IDENTIFICACIÓN DE DEPÓSITO |
+| CLASE | BASE IMPONIBLE | TIPO | IMPORTE | MP |  |  |
+| A00 | 943400 | 4.50% | 42453 | Se garantiza | 50 DATOS CONTABLES Garantía que se ofrece por 42453. Y cada mes de estancia se ha de pagar un 3% de 42453 = 1273.59 porque es importación temporal lucrativa o de exención parcial. |
+| B00 | 943400 + 42453 + 2000 = 987853 | 21% | 207449.13 | A Se paga y a la reexportación se devuelve con el 361 |  |
+| TOTAL: |  |  |
+| OBLIGADO PRINCIPAL Nº EORI FIRMA REPRESENTADO POR LUGAR Y FECHA | C ADUANA DE PARTIDA |
+| 51 ADUANAS DE PASO PREVISTAS Y PAÍS |
+|  |  |  |  |  |  |
+| 52 GARANTÍA NO VÁLIDA PARA | COD | 52 ADUANA DE DESTINO Y PAÍS |
+| J CONTROL POR LA ADUANA DE DESTINO | 54 LUGAR FECHA Y FIRMA FIRMA Y NOMBRE DEL DECLARANTE/REPRESENTANTE |

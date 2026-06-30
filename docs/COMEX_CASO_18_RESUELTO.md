@@ -1,0 +1,25 @@
+**COMEX CASO ****18**
+
+** TRANSPORTE TERRESTRE POR CARRETERA**
+
+**CONVENIO TIR**
+
+**El TIR no es una carta de porte sino un documento de tránsito.**** Permite atravesar aduanas sin apenas controles hasta que le mercancía llegue a la aduana de destino****. ****Pero,**** ¿qué sucede en una aduana de paso? En teoría nada, porque la mercancía no tiene destino el país donde está esa aduana de ****paso**** pero hay que atravesar este país y por este país exige una garantía por si la mercancía que se ha dicho que va a atravesar el país luego no sale del país. Esta garantía la tiene que poner el ****transportista**** pero en los TIR no la ponen los transportistas sino unas sociedades que hay en cada país que ofrecen estas garantías. En el caso de España la garantía la pone la asociación ASTIC a la que están asociados los transportistas internacionales con sede en España.**** El convenio TIR no pone tope en cuanto a las cantidades que se ****avalan,pero**** en la UE**** ****no se avalan deudas aduaneras y tributarias por más de 60.000 €. Si un transportista necesita más avales tiene que conseguirlos por su cuenta.**
+
+En el caso de Ecopapel aplicamos el TIR. La Unión Internacional de Transportes por Carretera (IRU) pone en práctica el Régimen TIR por mandato de la ONU. Los siguientes transportes se realizan conforme al convenio TIR de 1975 que se aplica al caso 16 
+
+- ¿Cuándo un transporte se somete al convenio TIR y por qué interesa someterse al convenio TIR? **Cuando el Estado de salida y destino hayan ratificado el convenio TIR.**** El TIR se refiere a ****vehículos de transporte por carretera**** (camiones)****, conjuntos**** ****de vehículos**** (cam****iones con remolque)**** o contenedore****s.**
+
+- ¿Qué asociación se convierte en España en garante ante las aduanas del cumplimiento de las condiciones del convenio TIR? **En España ASTIC**** **¿Por qué se exigen fianzas para estos transportes TIR? **Para garantizar los pagos de las deudas aduaneras y tributarias en caso de que se comercialicen mercancías en territorios por donde la mercancía sólo está de paso, es decir, por un territorio que no es el destino de la mercancía** ¿Dónde se depositan? **Las gestiona ASTIC para sus asociados previo pago de una tasa (o una tasa).**
+
+- ¿Se aplica el convenio TIR al transporte intracomunitario? **No, porque el transporte intracomunitario no es internacional.**
+
+- ¿En el caso 16 el camión lleva mercancías a Moldavia, pero podría pasar la aduana Moldavia-Ucrania y despachar la mercancía en la aduana de Odessa al amparo del mismo cuaderno TIR? **Si es así, tendríamos la aduana de Coslada, la aduana de ****Sculeni**** y la aduana de Moldavia- Ucrania. La pregunta es si un cuaderno TIR permite pasar un número indeterminado de aduanas o este número está limitado.**** El número de aduanas de salida y de ****destino en un cuaderno TIR no `puede superar cuatro, salvo excepción. Por aduanas de salida nos referimos a las de carga y por las de destino las de descarga. En este caso tenemos 3 aduanas. Carga en Coslada, descarga en ****Sculeni**** y vuelta en cargar en ****Sculeni**** y descarga en Odessa. Las aduanas que son simplemente de paso no cuentan. ****Ejemplo: ****Un camión ****carga en**** Lisboa con un TIR ****y vuelve a cargar en Coslada y descarga en Chisinau y volver a cargar y descargar en Odessa. En este caso tenemos cuatro aduanas y se puede usar el cuaderno TIR.**
+
+- Un transportista desea llevar tres contenedores de 10 pies cada uno, en un solo vehículo, acogido al convenio TIR. ¿Cuántos cuadernos TIR como mínimo deberá obtener? **La regla general es que se expedirá un cuaderno TIR ****para cada vehículo de transporte por**** ****carretera ****(vehículo es tanto como un camión como un remolque) ****o contenedor****. Regla excepcional: Un solo cuaderno ****TIr**** por un conjunto de vehículos (un camión y un remolque basta cuaderno un TIR) y también cuando son varios contendores en un solo vehículo (un camión con tres contenedores) o un conjunto de vehículos (un camión con tres contenedores y un remolque con un contenedor). En el cuaderno hay que hacer constar la mercancía que va en cada vehículo o contenedor. Si se trata de un convoy se puede emitir un solo TIR por todo el convoy.**
+
+- Un transportista desea realizar un transporte sometido al régimen TIR con las siguientes condiciones: Lugar de carga en dos aduanas situadas en Portugal, Oporto y Braga, y otra carga en la aduana de Villafría (Burgos, España) y lugar de llegada una aduana en Minsk. ¿Puede acogerse al régimen TIR? **Sí, son cuatro aduanas****.**
+
+** **
+
+Para ver el convenio TIR, con independencia de cuando se estudie el régimen de tránsito, ver el siguiente enlace: [https://www.iru.org/sites/default/files/2017-06/How_to_fill_in_a_TIR_Carnet_ES.pdf](https://www.iru.org/sites/default/files/2017-06/How_to_fill_in_a_TIR_Carnet_ES.pdf)

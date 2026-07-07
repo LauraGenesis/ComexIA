@@ -115,6 +115,10 @@ export interface ResultadoCalculo {
   base: "peso" | "volumen";
   /** Coste estimado si se ha indicado una tarifa, en € (si no, null). */
   coste: number | null;
+  /** Importe de comisión = coste × %comisión, en € (null si no hay coste). */
+  comision: number | null;
+  /** Coste de flete + comisión, en € (null si no hay coste). */
+  costeTotal: number | null;
 }
 
 export interface ResultadoFCL {
@@ -135,6 +139,25 @@ export interface ResultadoFCL {
   llenadoPeso: number;
   /** Coste estimado = contenedores × tarifa, en € (null si no hay tarifa). */
   coste: number | null;
+  /** Importe de comisión = coste × %comisión, en € (null si no hay coste). */
+  comision: number | null;
+  /** Coste de flete + comisión, en € (null si no hay coste). */
+  costeTotal: number | null;
+}
+
+/**
+ * Calcula el importe de comisión y el coste total a partir de un coste de flete.
+ *
+ * @param coste coste de flete en €, o null si aún no hay tarifa.
+ * @param comisionPct porcentaje de comisión sobre el flete (p. ej. 5 = 5 %).
+ */
+export function aplicarComision(
+  coste: number | null,
+  comisionPct = 0,
+): { comision: number | null; costeTotal: number | null } {
+  if (coste === null) return { comision: null, costeTotal: null };
+  const comision = comisionPct > 0 ? coste * (comisionPct / 100) : 0;
+  return { comision, costeTotal: coste + comision };
 }
 
 /**
@@ -142,11 +165,13 @@ export interface ResultadoFCL {
  * aprovechamiento.
  *
  * @param tarifaPorContenedor flete por contenedor en €. 0 = sin coste.
+ * @param comisionPct porcentaje de comisión sobre el flete (p. ej. 5 = 5 %).
  */
 export function calcularFCL(
   bultos: Bulto[],
   tipo: TipoContenedor,
   tarifaPorContenedor = 0,
+  comisionPct = 0,
 ): ResultadoFCL {
   const cont = CONTENEDORES[tipo];
 
@@ -173,6 +198,7 @@ export function calcularFCL(
 
   const coste =
     tarifaPorContenedor > 0 ? contenedores * tarifaPorContenedor : null;
+  const { comision, costeTotal } = aplicarComision(coste, comisionPct);
 
   return {
     totalBultos,
@@ -185,6 +211,8 @@ export function calcularFCL(
     llenadoVolumen,
     llenadoPeso,
     coste,
+    comision,
+    costeTotal,
   };
 }
 
@@ -202,11 +230,13 @@ export function volumenBulto(b: Bulto): number {
  * Calcula el peso facturable y el coste estimado para un modo de transporte.
  *
  * @param tarifa coste por unidad facturable (€/kg, o €/R-T en marítimo). 0 = sin coste.
+ * @param comisionPct porcentaje de comisión sobre el flete (p. ej. 5 = 5 %).
  */
 export function calcular(
   bultos: Bulto[],
   modo: ModoTransporte,
   tarifa = 0,
+  comisionPct = 0,
 ): ResultadoCalculo {
   const factor = FACTORES[modo];
 
@@ -238,6 +268,7 @@ export function calcular(
   if (tarifa > 0) {
     coste = modo === "maritimo" ? unidadesRT * tarifa : pesoFacturableKg * tarifa;
   }
+  const { comision, costeTotal } = aplicarComision(coste, comisionPct);
 
   return {
     totalBultos,
@@ -249,5 +280,7 @@ export function calcular(
     unidadesRT,
     base,
     coste,
+    comision,
+    costeTotal,
   };
 }

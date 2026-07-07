@@ -17,6 +17,7 @@ import {
   RiesgoBadge,
   SeveridadIcon,
 } from "@/components/badges";
+import { AccionesExpediente } from "@/components/app/acciones-expediente";
 import {
   getExpedientes,
   getAlertas,
@@ -118,6 +119,7 @@ export default async function DashboardPage() {
                   <th className="px-3 py-2.5 font-medium">Estado</th>
                   <th className="px-3 py-2.5 font-medium">Riesgo</th>
                   <th className="px-3 py-2.5 font-medium">Próxima acción</th>
+                  <th className="px-3 py-2.5"></th>
                 </tr>
               </thead>
               <tbody>
@@ -153,6 +155,9 @@ export default async function DashboardPage() {
                         {e.proximaAccion}
                         <ArrowRight className="size-3.5" />
                       </Link>
+                    </td>
+                    <td className="px-3 py-3 text-right">
+                      <AccionesExpediente id={e.id} producto={e.producto} />
                     </td>
                   </tr>
                 ))}

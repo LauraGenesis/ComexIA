@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Sparkles,
@@ -14,6 +14,8 @@ import {
   Info,
   FolderPlus,
   Database,
+  History,
+  Trash2,
 } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,28 @@ const EJEMPLOS = [
 
 type Estado = "entrada" | "procesando" | "resuelto";
 
+/** Un turno del hilo: lo que preguntó el usuario y la resolución del motor. */
+type Turno = { pregunta: string; resolucion: Resolucion };
+
+/** Una consulta guardada en el historial: el hilo completo con sus refinamientos. */
+type EntradaHistorial = {
+  id: string;
+  creado: number;
+  motor: MotorUsado;
+  turnos: Turno[];
+};
+
+const HISTORIAL_KEY = "comexia:motor:historial";
+const MAX_ENTRADAS = 30;
+
+function nuevoId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `h-${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+  }
+}
+
 export default function MotorPage() {
   const router = useRouter();
   const [texto, setTexto] = useState("");
@@ -37,10 +61,40 @@ export default function MotorPage() {
   const [motor, setMotor] = useState<MotorUsado>("demo");
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
-  // Refinamientos: detalles que el usuario añade tras la primera resolución.
-  // El motor recalcula con la consulta original + todos los refinamientos.
-  const [refinamientos, setRefinamientos] = useState<string[]>([]);
+  // Historial conversacional: cada turno es la pregunta del usuario (consulta
+  // inicial o refinamiento) y la respuesta del motor. El motor recalcula con
+  // todas las preguntas acumuladas.
+  const [historial, setHistorial] = useState<Turno[]>([]);
   const [refinando, setRefinando] = useState(false);
+  // Historial persistente de consultas al motor (localStorage). Cada entrada es
+  // un hilo completo (consulta inicial + refinamientos) que se puede retomar.
+  const [entradas, setEntradas] = useState<EntradaHistorial[]>([]);
+  const [entradaActivaId, setEntradaActivaId] = useState<string | null>(null);
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
+
+  // Carga el historial guardado tras el montaje. Debe ir en un effect (no en el
+  // inicializador de useState) para no leer localStorage durante el SSR y evitar
+  // desajustes de hidratación: el servidor renderiza sin historial y el cliente
+  // lo rellena aquí.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HISTORIAL_KEY);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sincronización con localStorage al montar
+      if (raw) setEntradas(JSON.parse(raw) as EntradaHistorial[]);
+    } catch {
+      // localStorage no disponible o datos corruptos: se ignora.
+    }
+  }, []);
+
+  /** Actualiza el estado y persiste el historial en localStorage. */
+  function persistirEntradas(next: EntradaHistorial[]) {
+    setEntradas(next);
+    try {
+      localStorage.setItem(HISTORIAL_KEY, JSON.stringify(next));
+    } catch {
+      // Sin persistencia disponible: el historial vivirá solo en memoria.
+    }
+  }
 
   async function crearExpediente() {
     if (!resolucion) return;
@@ -80,11 +134,23 @@ export default function MotorPage() {
     if (!texto.trim()) return;
     setEstado("procesando");
     setError(null);
-    setRefinamientos([]);
+    setHistorial([]);
     try {
       const data = await llamarMotor(texto);
+      const m = normalizarMotor(data.motor);
+      const turno: Turno = { pregunta: texto, resolucion: data.resolucion };
       setResolucion(data.resolucion);
-      setMotor(normalizarMotor(data.motor));
+      setMotor(m);
+      setHistorial([turno]);
+      // Nueva entrada al frente del historial persistente.
+      const id = nuevoId();
+      persistirEntradas(
+        [
+          { id, creado: Date.now(), motor: m, turnos: [turno] },
+          ...entradas,
+        ].slice(0, MAX_ENTRADAS),
+      );
+      setEntradaActivaId(id);
       setEstado("resuelto");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error inesperado");
@@ -99,11 +165,24 @@ export default function MotorPage() {
     setRefinando(true);
     setError(null);
     try {
-      const contenido = [texto, ...refinamientos, extra].join("\n");
+      const contenido = [...historial.map((t) => t.pregunta), extra].join("\n");
       const data = await llamarMotor(contenido);
+      const m = normalizarMotor(data.motor);
+      const turno: Turno = { pregunta: extra, resolucion: data.resolucion };
+      const nuevosTurnos = [...historial, turno];
       setResolucion(data.resolucion);
-      setMotor(normalizarMotor(data.motor));
-      setRefinamientos((prev) => [...prev, extra]);
+      setMotor(m);
+      setHistorial(nuevosTurnos);
+      // Refleja el refinamiento en la entrada activa del historial.
+      if (entradaActivaId) {
+        persistirEntradas(
+          entradas.map((e) =>
+            e.id === entradaActivaId
+              ? { ...e, motor: m, turnos: nuevosTurnos }
+              : e,
+          ),
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo afinar la consulta");
     } finally {
@@ -114,8 +193,33 @@ export default function MotorPage() {
   function reiniciar() {
     setEstado("entrada");
     setResolucion(null);
-    setRefinamientos([]);
+    setHistorial([]);
+    setEntradaActivaId(null);
     setError(null);
+  }
+
+  /** Retoma una consulta guardada: restaura su hilo y su resolución vigente. */
+  function cargarEntrada(entrada: EntradaHistorial) {
+    const ultimo = entrada.turnos[entrada.turnos.length - 1];
+    if (!ultimo) return;
+    setHistorial(entrada.turnos);
+    setResolucion(ultimo.resolucion);
+    setMotor(entrada.motor);
+    setTexto(entrada.turnos[0].pregunta);
+    setEntradaActivaId(entrada.id);
+    setError(null);
+    setEstado("resuelto");
+    setMostrarHistorial(false);
+  }
+
+  function borrarEntrada(id: string) {
+    persistirEntradas(entradas.filter((e) => e.id !== id));
+    if (entradaActivaId === id) setEntradaActivaId(null);
+  }
+
+  function borrarHistorial() {
+    persistirEntradas([]);
+    setEntradaActivaId(null);
   }
 
   return (
@@ -178,23 +282,137 @@ export default function MotorPage() {
           </Card>
 
           {estado === "procesando" && <Procesando />}
+
+          <PanelHistorial
+            entradas={entradas}
+            activaId={entradaActivaId}
+            onCargar={cargarEntrada}
+            onBorrar={borrarEntrada}
+            onBorrarTodo={borrarHistorial}
+          />
         </div>
       )}
 
       {estado === "resuelto" && resolucion && (
-        <ResultadoResolucion
-          resolucion={resolucion}
-          motor={motor}
-          creando={creando}
-          consulta={texto}
-          refinamientos={refinamientos}
-          refinando={refinando}
-          error={error}
-          onVolver={reiniciar}
-          onCrear={crearExpediente}
-          onRefinar={refinar}
-        />
+        <div className="space-y-4">
+          {entradas.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setMostrarHistorial((v) => !v)}
+                  className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink"
+                >
+                  <History className="size-4" />
+                  Historial ({entradas.length})
+                </button>
+              </div>
+              {mostrarHistorial && (
+                <PanelHistorial
+                  entradas={entradas}
+                  activaId={entradaActivaId}
+                  onCargar={cargarEntrada}
+                  onBorrar={borrarEntrada}
+                  onBorrarTodo={borrarHistorial}
+                />
+              )}
+            </div>
+          )}
+          <ResultadoResolucion
+            resolucion={resolucion}
+            motor={motor}
+            creando={creando}
+            historial={historial}
+            refinando={refinando}
+            error={error}
+            onVolver={reiniciar}
+            onCrear={crearExpediente}
+            onRefinar={refinar}
+          />
+        </div>
       )}
+    </div>
+  );
+}
+
+/** Formatea el instante de una consulta en fecha/hora corta en español. */
+function formatFecha(ts: number): string {
+  try {
+    return new Date(ts).toLocaleString("es-ES", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
+
+/** Lista de consultas guardadas; cada una se puede retomar o borrar. */
+function PanelHistorial({
+  entradas,
+  activaId,
+  onCargar,
+  onBorrar,
+  onBorrarTodo,
+}: {
+  entradas: EntradaHistorial[];
+  activaId: string | null;
+  onCargar: (entrada: EntradaHistorial) => void;
+  onBorrar: (id: string) => void;
+  onBorrarTodo: () => void;
+}) {
+  if (entradas.length === 0) return null;
+  return (
+    <div className="rounded-[var(--radius-card)] border border-line bg-surface">
+      <div className="flex items-center justify-between border-b border-line px-4 py-3">
+        <div className="flex items-center gap-2 text-sm font-medium text-ink">
+          <History className="size-4 text-faint" />
+          Consultas recientes
+          <span className="text-xs font-normal text-muted">
+            ({entradas.length})
+          </span>
+        </div>
+        <button
+          onClick={onBorrarTodo}
+          className="text-xs text-muted hover:text-danger"
+        >
+          Borrar todo
+        </button>
+      </div>
+      <ul className="divide-y divide-line">
+        {entradas.map((e) => {
+          const inicial = e.turnos[0]?.pregunta ?? "(sin consulta)";
+          const nRef = Math.max(0, e.turnos.length - 1);
+          return (
+            <li
+              key={e.id}
+              className={`flex items-center gap-3 px-4 py-2.5 ${
+                e.id === activaId ? "bg-brand-50/40" : ""
+              }`}
+            >
+              <button
+                onClick={() => onCargar(e)}
+                className="min-w-0 flex-1 text-left"
+              >
+                <p className="truncate text-sm text-ink">{inicial}</p>
+                <p className="text-xs text-muted">
+                  {formatFecha(e.creado)}
+                  {nRef > 0 &&
+                    ` · ${nRef} refinamiento${nRef > 1 ? "s" : ""}`}
+                </p>
+              </button>
+              <button
+                onClick={() => onBorrar(e.id)}
+                aria-label="Borrar consulta"
+                className="shrink-0 text-faint hover:text-danger"
+              >
+                <Trash2 className="size-4" />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -273,8 +491,7 @@ function ResultadoResolucion({
   resolucion,
   motor,
   creando,
-  consulta,
-  refinamientos,
+  historial,
   refinando,
   error,
   onVolver,
@@ -284,8 +501,7 @@ function ResultadoResolucion({
   resolucion: Resolucion;
   motor: MotorUsado;
   creando: boolean;
-  consulta: string;
-  refinamientos: string[];
+  historial: Turno[];
   refinando: boolean;
   error: string | null;
   onVolver: () => void;
@@ -293,7 +509,6 @@ function ResultadoResolucion({
   onRefinar: (detalle: string) => void;
 }) {
   const r = resolucion;
-  const atipico = r.confianza < 0.6;
   const [draft, setDraft] = useState("");
 
   function enviarRefinamiento() {
@@ -350,61 +565,82 @@ function ResultadoResolucion({
         </div>
       </div>
 
+      {/* Conversación principal: hilo tipo chat en un único recuadro que fluye
+          (consulta → respuesta, refinamiento → respuesta) con el campo para
+          seguir afinando al final. */}
       <div className="rounded-[var(--radius-card)] border border-line bg-surface p-5">
-        <p className="text-ink">{r.resumen}</p>
-      </div>
-
-      {/* Refinar: seguir consultando al motor añadiendo contexto (2 columnas) */}
-      <div className="rounded-[var(--radius-card)] border border-brand-500/30 bg-brand-50/40 p-4">
-        <div className="flex items-center gap-2 text-sm font-medium text-ink">
-          <Sparkles className="size-4 text-brand-700" />
-          ¿Falta contexto? Afina la consulta
-        </div>
-
-        <div className="mt-3 grid gap-4 md:grid-cols-[1fr_minmax(200px,18rem)]">
-          {/* Columna izquierda: hilo conversacional (burbujas del usuario) */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-faint">
-              Hilo de la consulta
-            </p>
-            <div className="space-y-2">
-              {[consulta, ...refinamientos].filter(Boolean).map((msg, i) => (
-                <div key={i} className="flex items-start justify-end gap-2">
-                  <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-100 px-3 py-2 text-sm text-ink">
-                    {msg}
+        <div className="space-y-4">
+          {historial.map((turno, i) => {
+            // El último turno es la respuesta vigente: lleva todo el detalle.
+            // Los anteriores quedan como resumen, igual que en un chat real.
+            const ultimo = i === historial.length - 1;
+            return (
+              <div key={i} className="space-y-3">
+                {/* Pregunta del usuario (derecha) */}
+                <div className="flex items-start justify-end gap-2">
+                  <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-100 px-3.5 py-2 text-sm text-ink">
+                    {turno.pregunta}
                   </div>
-                  <span className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs">
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-200 text-xs">
                     🧑
                   </span>
                 </div>
-              ))}
-            </div>
-          </div>
+                {/* Respuesta del motor (izquierda) */}
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                    <Sparkles className="size-4" />
+                  </span>
+                  {ultimo ? (
+                    <div className="flex-1 space-y-4 rounded-2xl rounded-tl-sm bg-canvas p-4">
+                      <p className="text-sm leading-relaxed text-ink">
+                        {turno.resolucion.resumen}
+                      </p>
+                      <RespuestaDetalle r={turno.resolucion} />
+                    </div>
+                  ) : (
+                    <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-canvas px-3.5 py-2 text-sm text-ink">
+                      {turno.resolucion.resumen}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
 
-          {/* Columna derecha: campo para seguir afinando */}
-          <div className="space-y-2">
-            <p className="text-xs text-muted">
-              Añade detalles (valor, incoterm, uso, régimen, certificados…) y el
-              motor recalculará la resolución.
-            </p>
-            <textarea
+          {refinando && (
+            <div className="flex items-center gap-2 text-sm text-muted">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                <Loader2 className="size-4 animate-spin" />
+              </span>
+              Afinando la resolución…
+            </div>
+          )}
+        </div>
+
+        {/* Campo para seguir afinando, dentro del mismo recuadro */}
+        <div className="mt-4 border-t border-line pt-4">
+          <label className="text-xs text-muted">
+            ¿Falta contexto? Añade detalles (valor, incoterm, uso, régimen,
+            certificados…) y el motor recalculará.
+          </label>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter") {
                   e.preventDefault();
                   enviarRefinamiento();
                 }
               }}
-              rows={3}
-              placeholder="Ej.: el valor es 8.000 € con incoterm CIF y es para reexportación"
+              placeholder="Ej.: valor 8.000 € con incoterm CIF, para reexportación"
               disabled={refinando}
-              className="w-full resize-none rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-brand-500 focus:outline-none"
+              className="flex-1 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-ink placeholder:text-faint focus:border-brand-500 focus:outline-none"
             />
             <Button
               onClick={enviarRefinamiento}
               disabled={refinando || !draft.trim()}
-              className="w-full"
+              className="shrink-0"
             >
               {refinando ? (
                 <>
@@ -416,184 +652,188 @@ function ResultadoResolucion({
                 </>
               )}
             </Button>
-            {error && <p className="text-sm text-danger">{error}</p>}
           </div>
+          {error && <p className="mt-2 text-sm text-danger">{error}</p>}
         </div>
       </div>
 
-      {atipico && (
-        <div className="rounded-[var(--radius-card)] border border-warning/40 bg-warning-bg p-4 text-sm text-ink">
-          <p className="font-medium">Caso poco frecuente</p>
-          <p className="text-muted">
-            No hay un caso idéntico: ComexIA ha razonado por analogía. Revisa los
-            puntos marcados antes de presentar.
-          </p>
-        </div>
-      )}
-
-      {/* Alertas */}
-      {r.alertas.map((a, i) => (
-        <div
-          key={i}
-          className={`rounded-[var(--radius-card)] border p-4 text-sm ${
-            a.severidad === "critica"
-              ? "border-danger/40 bg-danger-bg"
-              : a.severidad === "advertencia"
-                ? "border-warning/40 bg-warning-bg"
-                : "border-info/40 bg-info-bg"
-          }`}
-        >
-          {a.mensaje}
-        </div>
-      ))}
-
-      <div className="grid gap-5 lg:grid-cols-3">
-        <Card className="divide-y divide-line self-start lg:col-span-2">
-          <Seccion icon={FileText} title="Documentación">
-            <ul className="space-y-1">
-              {r.documentacion.map((d) => (
-                <li
-                  key={d.doc}
-                  className="flex items-center gap-3 py-1 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    className="size-4 shrink-0 rounded border-line accent-brand-600"
-                  />
-                  <span className="flex-1 leading-snug text-ink">{d.doc}</span>
-                  <EstadoDoc estado={d.estado} />
-                </li>
-              ))}
-            </ul>
-          </Seccion>
-
-          <Seccion icon={BookOpen} title="Normativa aplicable">
-            <ul className="space-y-3 text-sm">
-              {r.normativa.map((n) => (
-                <li key={n.titulo} className="flex flex-col gap-0.5">
-                  <span className="leading-snug text-ink">{n.titulo}</span>
-                  {n.url ? (
-                    <a
-                      href={n.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-brand-700 hover:underline"
-                    >
-                      {n.fuente} ↗
-                    </a>
-                  ) : (
-                    <span className="text-xs text-muted">{n.fuente}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </Seccion>
-
-          {r.requisitosSanitarios.length > 0 && (
-            <Seccion
-              icon={ShieldAlert}
-              title="Requisitos sanitarios / fitosanitarios"
-            >
-              <ul className="space-y-2 text-sm">
-                {r.requisitosSanitarios.map((req) => (
-                  <li key={req} className="flex gap-2.5">
-                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-400" />
-                    <span className="leading-relaxed text-ink">{req}</span>
-                  </li>
-                ))}
-              </ul>
-            </Seccion>
+      {/* Acciones sobre la resolución vigente */}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="primary" onClick={onCrear} disabled={creando}>
+          {creando ? (
+            <>
+              <Loader2 className="size-4 animate-spin" /> Creando…
+            </>
+          ) : (
+            <>
+              <FolderPlus className="size-4" /> Crear expediente
+            </>
           )}
+        </Button>
+        <Button variant="secondary">
+          <FileText className="size-4" /> Generar documentos
+        </Button>
+        <Button variant="ghost">
+          Exportar resolución PDF <ArrowRight className="size-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
 
-          <Seccion icon={ListChecks} title="Plan de acción">
-            <ol className="space-y-2.5 text-sm">
-              {r.pasos.map((p, i) => (
-                <li key={p} className="flex gap-3">
+/** Alertas en formato breve: lo más importante primero, una línea por alerta. */
+function AlertasBreves({ alertas }: { alertas: Resolucion["alertas"] }) {
+  if (alertas.length === 0) return null;
+  const orden = { critica: 0, advertencia: 1, info: 2 } as const;
+  const ordenadas = [...alertas].sort(
+    (a, b) => orden[a.severidad] - orden[b.severidad],
+  );
+  return (
+    <div className="rounded-xl border border-line bg-surface px-4 py-3">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted">
+        A tener en cuenta
+      </p>
+      <ul className="space-y-1.5">
+        {ordenadas.map((a, i) => {
+          const color =
+            a.severidad === "critica"
+              ? "bg-danger"
+              : a.severidad === "advertencia"
+                ? "bg-warning"
+                : "bg-info";
+          return (
+            <li key={i} className="flex items-start gap-2 text-sm">
+              <span className={`mt-1.5 size-2 shrink-0 rounded-full ${color}`} />
+              <span className="leading-snug text-ink">{a.mensaje}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** Detalle completo de la resolución, embebido en la respuesta del chat. */
+function RespuestaDetalle({ r }: { r: Resolucion }) {
+  return (
+    <div className="space-y-4">
+      <AlertasBreves alertas={r.alertas} />
+
+      <div className="divide-y divide-line rounded-xl border border-line bg-surface">
+        <Seccion icon={FileText} title="Documentación">
+          <ul className="space-y-1">
+            {r.documentacion.map((d) => (
+              <li key={d.doc} className="flex items-center gap-3 py-1 text-sm">
+                <input
+                  type="checkbox"
+                  className="size-4 shrink-0 rounded border-line accent-brand-600"
+                />
+                <span className="flex-1 leading-snug text-ink">{d.doc}</span>
+                <EstadoDoc estado={d.estado} />
+              </li>
+            ))}
+          </ul>
+        </Seccion>
+
+        <Seccion icon={BookOpen} title="Normativa aplicable">
+          <ul className="space-y-3 text-sm">
+            {r.normativa.map((n) => (
+              <li key={n.titulo} className="flex flex-col gap-0.5">
+                <span className="leading-snug text-ink">{n.titulo}</span>
+                {n.url ? (
+                  <a
+                    href={n.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-brand-700 hover:underline"
+                  >
+                    {n.fuente} ↗
+                  </a>
+                ) : (
+                  <span className="text-xs text-muted">{n.fuente}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Seccion>
+
+        {r.requisitosSanitarios.length > 0 && (
+          <Seccion
+            icon={ShieldAlert}
+            title="Requisitos sanitarios / fitosanitarios"
+          >
+            <ul className="space-y-2 text-sm">
+              {r.requisitosSanitarios.map((req) => (
+                <li key={req} className="flex gap-2.5">
+                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-400" />
+                  <span className="leading-relaxed text-ink">{req}</span>
+                </li>
+              ))}
+            </ul>
+          </Seccion>
+        )}
+
+        <Seccion icon={ListChecks} title="Plan de acción">
+          <ol className="space-y-2.5 text-sm">
+            {r.pasos.map((p, i) => {
+              // Algunos pasos vienen con su propio "1." al inicio; lo quitamos
+              // para no duplicar el número del círculo.
+              const paso = p.replace(/^\s*\d+[.)]\s*/, "");
+              return (
+                <li key={i} className="flex gap-3">
                   <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[11px] font-medium text-brand-700">
                     {i + 1}
                   </span>
-                  <span className="leading-relaxed text-ink">{p}</span>
+                  <span className="leading-relaxed text-ink">{paso}</span>
+                </li>
+              );
+            })}
+          </ol>
+        </Seccion>
+
+        <Seccion icon={ShieldAlert} title="Riesgo de inspección">
+          <ul className="space-y-3.5">
+            {r.riesgos.map((ri, i) => {
+              const color =
+                ri.nivel === "alto"
+                  ? "bg-danger"
+                  : ri.nivel === "medio"
+                    ? "bg-warning"
+                    : "bg-success";
+              return (
+                <li key={i} className="flex gap-2.5 text-sm">
+                  <span
+                    className={`mt-1.5 size-2 shrink-0 rounded-full ${color}`}
+                  />
+                  <div>
+                    <p className="font-medium capitalize text-ink">
+                      {ri.tipo.replace(/_/g, " ")}
+                      <span className="ml-1.5 text-xs font-normal text-muted">
+                        · {ri.nivel}
+                      </span>
+                    </p>
+                    <p className="text-xs leading-relaxed text-muted">
+                      {ri.motivo}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </Seccion>
+
+        {r.verificar.length > 0 && (
+          <Seccion icon={Info} title="Verificar antes de presentar">
+            <ul className="space-y-2 text-sm">
+              {r.verificar.map((v) => (
+                <li key={v} className="flex gap-2.5">
+                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-line-strong" />
+                  <span className="leading-relaxed text-muted">{v}</span>
                 </li>
               ))}
-            </ol>
+            </ul>
           </Seccion>
-
-          {r.verificar.length > 0 && (
-            <Seccion icon={Info} title="Verificar antes de presentar">
-              <ul className="space-y-2 text-sm">
-                {r.verificar.map((v) => (
-                  <li key={v} className="flex gap-2.5">
-                    <span className="mt-2 size-1.5 shrink-0 rounded-full bg-line-strong" />
-                    <span className="leading-relaxed text-muted">{v}</span>
-                  </li>
-                ))}
-              </ul>
-            </Seccion>
-          )}
-        </Card>
-
-        {/* Panel lateral */}
-        <div className="space-y-4">
-          <Card className="self-start">
-            <Seccion icon={ShieldAlert} title="Riesgo de inspección">
-              <ul className="space-y-3.5">
-                {r.riesgos.map((ri, i) => {
-                  const color =
-                    ri.nivel === "alto"
-                      ? "bg-danger"
-                      : ri.nivel === "medio"
-                        ? "bg-warning"
-                        : "bg-success";
-                  return (
-                    <li key={i} className="flex gap-2.5 text-sm">
-                      <span
-                        className={`mt-1.5 size-2 shrink-0 rounded-full ${color}`}
-                      />
-                      <div>
-                        <p className="font-medium capitalize text-ink">
-                          {ri.tipo.replace(/_/g, " ")}
-                          <span className="ml-1.5 text-xs font-normal text-muted">
-                            · {ri.nivel}
-                          </span>
-                        </p>
-                        <p className="text-xs leading-relaxed text-muted">
-                          {ri.motivo}
-                        </p>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </Seccion>
-          </Card>
-
-          <Card>
-            <CardBody className="space-y-2">
-              <Button
-                variant="primary"
-                className="w-full"
-                onClick={onCrear}
-                disabled={creando}
-              >
-                {creando ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" /> Creando…
-                  </>
-                ) : (
-                  <>
-                    <FolderPlus className="size-4" /> Crear expediente
-                  </>
-                )}
-              </Button>
-              <Button variant="secondary" className="w-full">
-                <FileText className="size-4" /> Generar documentos
-              </Button>
-              <Button variant="ghost" className="w-full">
-                Exportar resolución PDF <ArrowRight className="size-4" />
-              </Button>
-            </CardBody>
-          </Card>
-        </div>
+        )}
       </div>
     </div>
   );

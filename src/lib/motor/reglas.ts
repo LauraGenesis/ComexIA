@@ -158,6 +158,68 @@ function aCaso(e: EntradaCaso): Caso {
   };
 }
 
+/**
+ * Forma pública y serializable de una regla, para el buscador de Normativa.
+ * A diferencia de `aResolucion` (que descarta los criterios de coincidencia),
+ * aquí conservamos producto/origen/destino/tipo/TARIC porque son justamente por
+ * lo que se filtra en la pantalla.
+ */
+export interface ReglaNormativa {
+  nombre: string;
+  productoMatch: string | null;
+  hsTaric: string | null;
+  origen: string | null;
+  destino: string | null;
+  tipo: string | null;
+  resumen: string;
+  confianza: number;
+  requisitosSanitarios: string[];
+  verificar: string[];
+  documentos: { doc: string; estado: string }[];
+  normativa: { titulo: string; fuente: string; url: string | null; relevancia: string }[];
+  riesgos: { tipo: string; nivel: string; motivo: string }[];
+  alertas: { severidad: string; mensaje: string }[];
+  pasos: string[];
+}
+
+/**
+ * Devuelve TODAS las reglas activas de la base de conocimiento en una forma
+ * plana lista para renderizar. Reutiliza `cargarReglas()`, así que respeta el
+ * despacho demo (memoria) / Prisma (SQLite) sin duplicar lógica.
+ */
+export async function getReglas(): Promise<ReglaNormativa[]> {
+  const reglas = await cargarReglas();
+  return reglas.map((r) => ({
+    nombre: r.nombre,
+    productoMatch: r.productoMatch ?? null,
+    hsTaric: r.hsTaric ?? null,
+    origen: r.origen ?? null,
+    destino: r.destino ?? null,
+    tipo: r.tipo ?? null,
+    resumen: r.resumen,
+    confianza: r.confianza,
+    requisitosSanitarios: lineas(r.requisitosSanitarios),
+    verificar: lineas(r.verificar),
+    documentos: r.documentos.map((d) => ({ doc: d.doc, estado: d.estado })),
+    normativa: r.normativa.map((n) => ({
+      titulo: n.titulo,
+      fuente: n.fuente,
+      url: n.url ?? null,
+      relevancia: n.relevancia ?? "media",
+    })),
+    riesgos: r.riesgos.map((ri) => ({
+      tipo: ri.tipo,
+      nivel: ri.nivel,
+      motivo: ri.motivo,
+    })),
+    alertas: (r.alertas ?? []).map((a) => ({
+      severidad: a.severidad,
+      mensaje: a.mensaje,
+    })),
+    pasos: r.pasos.map((p) => p.texto),
+  }));
+}
+
 /** Una regla análoga: su etiqueta legible y la resolución que representa. */
 export interface ReglaAnaloga {
   nombre: string;

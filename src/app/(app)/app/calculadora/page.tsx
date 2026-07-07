@@ -44,22 +44,24 @@ export default function CalculadoraPage() {
   const [servicio, setServicio] = useState<"lcl" | "fcl">("lcl");
   const [tipoCont, setTipoCont] = useState<TipoContenedor>("40gp");
   const [tarifa, setTarifa] = useState("");
+  const [comision, setComision] = useState("");
   const [bultos, setBultos] = useState<Bulto[]>([
     { ...bultoVacio(nuevoId()), cantidad: 1, largo: 120, ancho: 80, alto: 100, peso: 250 },
   ]);
 
   const factor = FACTORES[modo];
   const tarifaNum = Number(tarifa.replace(",", ".")) || 0;
+  const comisionNum = Number(comision.replace(",", ".")) || 0;
   const esMaritimo = modo === "maritimo";
   const esFCL = esMaritimo && servicio === "fcl";
 
   const resultado = useMemo(
-    () => calcular(bultos, modo, tarifaNum),
-    [bultos, modo, tarifaNum],
+    () => calcular(bultos, modo, tarifaNum, comisionNum),
+    [bultos, modo, tarifaNum, comisionNum],
   );
   const resFCL = useMemo(
-    () => calcularFCL(bultos, tipoCont, tarifaNum),
-    [bultos, tipoCont, tarifaNum],
+    () => calcularFCL(bultos, tipoCont, tarifaNum, comisionNum),
+    [bultos, tipoCont, tarifaNum, comisionNum],
   );
 
   function actualizar(id: string, campo: keyof Bulto, valor: string) {
@@ -242,9 +244,9 @@ export default function CalculadoraPage() {
                 </tbody>
               </table>
             </div>
-            <CardBody className="border-t border-line">
+            <CardBody className="space-y-3 border-t border-line">
               <label className="flex flex-wrap items-center gap-3 text-sm">
-                <span className="font-medium text-ink">Tarifa de flete</span>
+                <span className="w-28 font-medium text-ink">Tarifa de flete</span>
                 <input
                   type="number"
                   min={0}
@@ -255,19 +257,37 @@ export default function CalculadoraPage() {
                 />
                 <span className="text-muted">{tarifaLabel}</span>
               </label>
+              <label className="flex flex-wrap items-center gap-3 text-sm">
+                <span className="w-28 font-medium text-ink">Comisión</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={comision}
+                  placeholder="0"
+                  onChange={(e) => setComision(e.target.value)}
+                  className="w-28 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+                />
+                <span className="text-muted">% sobre el flete</span>
+              </label>
             </CardBody>
           </Card>
 
           {/* Resultados */}
           <div className="space-y-4">
             {esFCL ? (
-              <ResultadoFCLCard res={resFCL} tipo={tipoCont} tarifa={tarifaNum} />
+              <ResultadoFCLCard
+                res={resFCL}
+                tipo={tipoCont}
+                tarifa={tarifaNum}
+                comisionPct={comisionNum}
+              />
             ) : (
               <ResultadoFleteCard
                 res={resultado}
                 esMaritimo={esMaritimo}
                 factorLabel={esMaritimo ? "Marítimo · LCL" : factor.label}
                 tarifa={tarifaNum}
+                comisionPct={comisionNum}
               />
             )}
           </div>
@@ -284,11 +304,13 @@ function ResultadoFleteCard({
   esMaritimo,
   factorLabel,
   tarifa,
+  comisionPct,
 }: {
   res: ReturnType<typeof calcular>;
   esMaritimo: boolean;
   factorLabel: string;
   tarifa: number;
+  comisionPct: number;
 }) {
   return (
     <>
@@ -337,6 +359,12 @@ function ResultadoFleteCard({
             : `${fmt(res.pesoFacturableKg)} kg × ${fmt(tarifa, 3)} €/kg`
         }
       />
+
+      <ComisionCard
+        comisionPct={comisionPct}
+        comision={res.comision}
+        costeTotal={res.costeTotal}
+      />
     </>
   );
 }
@@ -347,10 +375,12 @@ function ResultadoFCLCard({
   res,
   tipo,
   tarifa,
+  comisionPct,
 }: {
   res: ReturnType<typeof calcularFCL>;
   tipo: TipoContenedor;
   tarifa: number;
+  comisionPct: number;
 }) {
   const c = CONTENEDORES[tipo];
   return (
@@ -398,6 +428,12 @@ function ResultadoFCLCard({
         coste={res.coste}
         detalle={`${res.contenedores} × ${formatEUR(tarifa)}/contenedor`}
       />
+
+      <ComisionCard
+        comisionPct={comisionPct}
+        comision={res.comision}
+        costeTotal={res.costeTotal}
+      />
     </>
   );
 }
@@ -417,6 +453,57 @@ function CosteCard({ coste, detalle }: { coste: number | null; detalle: string }
         <p className="text-xs text-muted">
           {coste === null ? "Introduce una tarifa para estimar el coste." : detalle}
         </p>
+      </CardBody>
+    </Card>
+  );
+}
+
+function ComisionCard({
+  comisionPct,
+  comision,
+  costeTotal,
+}: {
+  comisionPct: number;
+  comision: number | null;
+  costeTotal: number | null;
+}) {
+  const sinComision = comision === null || comisionPct <= 0;
+  return (
+    <Card>
+      <CardBody className="space-y-3">
+        <div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted">
+              Comisión
+            </p>
+            {comisionPct > 0 && (
+              <span className="rounded-full bg-accent-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-700">
+                {fmt(comisionPct, 2)} %
+              </span>
+            )}
+          </div>
+          <p className="text-3xl font-semibold tracking-tight text-brand-700">
+            {sinComision ? "—" : formatEUR(comision)}
+          </p>
+          <p className="text-xs text-muted">
+            {comision === null
+              ? "Introduce una tarifa para estimar la comisión."
+              : comisionPct <= 0
+                ? "Introduce un % de comisión sobre el flete."
+                : `${fmt(comisionPct, 2)} % sobre el flete estimado.`}
+          </p>
+        </div>
+
+        {costeTotal !== null && (
+          <div className="flex items-center justify-between border-t border-line pt-3">
+            <span className="text-xs font-medium uppercase tracking-wide text-muted">
+              Total con comisión
+            </span>
+            <span className="text-lg font-semibold tabular-nums text-ink">
+              {formatEUR(costeTotal)}
+            </span>
+          </div>
+        )}
       </CardBody>
     </Card>
   );

@@ -1,16 +1,23 @@
-import { Placeholder } from "@/components/app/placeholder";
+import { NormativaBuscador } from "@/components/app/normativa-buscador";
+import { getReglas } from "@/lib/repo";
 
-export default function NormativaPage() {
+export const dynamic = "force-dynamic";
+
+export default async function NormativaPage() {
+  const reglas = await getReglas();
+
   return (
-    <Placeholder
-      titulo="Motor de normativa"
-      descripcion="Busca requisitos y normativa por país, producto y código TARIC/HS."
-      proximamente={[
-        "Filtrar por país de origen/destino, producto, TARIC y tipo de riesgo",
-        "Ver aranceles, contingentes y certificados exigidos",
-        "Consultar controles aduaneros, sanitarios y fitosanitarios",
-        "Acceder a la fuente normativa de cada requisito",
-      ]}
-    />
+    <div className="mx-auto max-w-4xl space-y-5">
+      <div>
+        <h1 className="text-2xl font-semibold text-ink">Normativa</h1>
+        <p className="text-sm text-muted">
+          Busca requisitos y normativa por producto, país, código TARIC/HS y
+          tipo de riesgo. {reglas.length}{" "}
+          {reglas.length === 1 ? "regla" : "reglas"} en la base de conocimiento.
+        </p>
+      </div>
+
+      <NormativaBuscador reglas={reglas} />
+    </div>
   );
 }

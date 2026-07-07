@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { FileText, ArrowRight } from "lucide-react";
+import { FileText, ArrowRight, History } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
 import { CATALOGO } from "@/lib/documentos/catalogo";
+import { ExtractorDossier } from "@/components/documentos/extractor-dossier";
 
 const CATEGORIAS = [
   "Aduaneros",
@@ -16,13 +17,23 @@ const CATEGORIAS = [
 export default function DocumentosPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-ink">Generar documento</h1>
-        <p className="text-sm text-muted">
-          Catálogo abierto: elige un tipo de documento y rellénalo con
-          validación y vista previa.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-ink">Generar documento</h1>
+          <p className="text-sm text-muted">
+            Sube tus documentos y deja que la IA los rellene, o elige un tipo del
+            catálogo y complétalo a mano con validación y vista previa.
+          </p>
+        </div>
+        <Link
+          href="/app/documentos/historial"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm font-medium text-muted hover:text-ink"
+        >
+          <History className="size-4" /> Historial
+        </Link>
       </div>
+
+      <ExtractorDossier />
 
       {CATEGORIAS.map((cat) => {
         const docs = CATALOGO.filter((d) => d.categoria === cat);

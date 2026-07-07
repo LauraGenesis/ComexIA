@@ -4,6 +4,13 @@ import type { Resolucion } from "./motor/schema";
 import type { DuaDatos } from "./documentos/dua";
 import type { KpisDashboard, Fuente } from "./repo.prisma";
 import {
+  partesDocumento,
+  normalizarOrigen,
+  type OrigenDocumento,
+  type DocumentoGeneradoResumen,
+  type DocumentoGeneradoDetalle,
+} from "./documentos/historial";
+import {
   expedientes as seedExpedientes,
   alertas as seedAlertas,
 } from "./data";
@@ -55,6 +62,18 @@ for (const e of expedientes) {
 const duas = new Map<string, DuaDatos>();
 // Biblioteca de soporte en memoria.
 const fuentes: Fuente[] = [];
+
+// Historial de documentos generados (independiente de expedientes).
+interface DocGenDemo {
+  id: string;
+  tipo: string;
+  subtipo?: string;
+  titulo: string;
+  origen: OrigenDocumento;
+  datos: unknown;
+  fecha: string;
+}
+const documentosGenerados: DocGenDemo[] = [];
 
 let contador = expedientes.length;
 
@@ -220,6 +239,18 @@ export async function actualizarTituloExpediente(id: string, titulo: string): Pr
   registrarEvento(id, "usuario", `Renombró el expediente a «${limpio}»`);
 }
 
+export async function eliminarExpediente(id: string): Promise<void> {
+  const i = expedientes.findIndex((e) => e.id === id);
+  if (i === -1) return;
+  expedientes.splice(i, 1);
+  // Limpia datos asociados (equivalente al onDelete: Cascade de Prisma).
+  eventos.delete(id);
+  duas.delete(id);
+  for (let j = alertas.length - 1; j >= 0; j--) {
+    if (alertas[j].expedienteId === id) alertas.splice(j, 1);
+  }
+}
+
 export async function guardarDua(opts: {
   expedienteId: string;
   subtipo: string;
@@ -250,6 +281,70 @@ export async function guardarDua(opts: {
 
 export async function getDuaGuardado(expedienteId: string): Promise<DuaDatos | null> {
   return duas.get(expedienteId) ?? null;
+}
+
+// ─── Historial de documentos generados (independiente de expedientes) ───
+
+export async function guardarDocumentoGenerado(opts: {
+  id?: string;
+  tipo: string;
+  subtipo?: string;
+  titulo: string;
+  origen: string;
+  datos: unknown;
+}): Promise<string> {
+  const origen = normalizarOrigen(opts.origen);
+  const existente = opts.id
+    ? documentosGenerados.find((d) => d.id === opts.id)
+    : undefined;
+
+  if (existente) {
+    existente.tipo = opts.tipo;
+    existente.subtipo = opts.subtipo;
+    existente.titulo = opts.titulo;
+    existente.origen = origen;
+    existente.datos = opts.datos;
+    existente.fecha = formatDateShort(new Date());
+    return existente.id;
+  }
+
+  const id = `docgen-demo-${documentosGenerados.length + 1}-${contador}`;
+  documentosGenerados.unshift({
+    id,
+    tipo: opts.tipo,
+    subtipo: opts.subtipo,
+    titulo: opts.titulo,
+    origen,
+    datos: opts.datos,
+    fecha: formatDateShort(new Date()),
+  });
+  return id;
+}
+
+export async function getDocumentosGenerados(): Promise<
+  DocumentoGeneradoResumen[]
+> {
+  return documentosGenerados.map((d) => ({
+    id: d.id,
+    tipo: d.tipo,
+    subtipo: d.subtipo,
+    titulo: d.titulo,
+    origen: d.origen,
+    fecha: d.fecha,
+    ...partesDocumento(d.tipo, JSON.stringify(d.datos)),
+  }));
+}
+
+export async function getDocumentoGeneradoById(
+  id: string,
+): Promise<DocumentoGeneradoDetalle | null> {
+  const d = documentosGenerados.find((x) => x.id === id);
+  return d ? { tipo: d.tipo, subtipo: d.subtipo, datos: d.datos } : null;
+}
+
+export async function eliminarDocumentoGenerado(id: string): Promise<void> {
+  const i = documentosGenerados.findIndex((d) => d.id === id);
+  if (i !== -1) documentosGenerados.splice(i, 1);
 }
 
 // ─── Biblioteca de soporte ───

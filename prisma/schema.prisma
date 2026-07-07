@@ -70,6 +70,21 @@ model Evento {
   createdAt    DateTime @default(now())
 }
 
+// Historial de documentos generados desde la sección "Documentos".
+// Independiente de los expedientes: registra cada documento producido (hoy DUA;
+// mañana Factura, Certificado…), venga de la extracción con IA o del catálogo
+// manual. Guarda sus datos en JSON para poder reabrirlo en el editor.
+model DocumentoGenerado {
+  id        String   @id @default(cuid())
+  tipo      String // DUA | Factura | Certificado…
+  subtipo   String? // importacion | exportacion
+  titulo    String
+  origen    String   @default("manual") // manual | extraccion
+  datos     String // JSON con los campos del documento
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // BASE DE CONOCIMIENTO (motor SIN IA)
 //

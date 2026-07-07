@@ -3,6 +3,12 @@ import { prisma } from "./prisma";
 import { formatDateShort } from "./utils";
 import { resolucionSchema, type Resolucion } from "./motor/schema";
 import type { DuaDatos } from "./documentos/dua";
+import {
+  partesDocumento,
+  normalizarOrigen,
+  type DocumentoGeneradoResumen,
+  type DocumentoGeneradoDetalle,
+} from "./documentos/historial";
 import type {
   Alerta,
   AccionPendiente,
@@ -271,6 +277,14 @@ export async function actualizarTituloExpediente(
 }
 
 /**
+ * Elimina un expediente. Documentos, alertas y eventos asociados se borran en
+ * cascada (onDelete: Cascade en schema.prisma).
+ */
+export async function eliminarExpediente(id: string): Promise<void> {
+  await prisma.expediente.delete({ where: { id } });
+}
+
+/**
  * Guarda un DUA en un expediente: marca el documento como generado (o lo crea),
  * almacena sus datos y registra un evento de auditoría.
  */
@@ -321,6 +335,79 @@ export async function getDuaGuardado(
   } catch {
     return null;
   }
+}
+
+// ─── Historial de documentos generados (independiente de expedientes) ───
+
+/**
+ * Crea o actualiza una entrada del historial. Si se pasa `id` y existe, se
+ * actualiza (re-guardar el mismo documento no duplica filas); si no, se crea.
+ * Devuelve el id resultante.
+ */
+export async function guardarDocumentoGenerado(opts: {
+  id?: string;
+  tipo: string;
+  subtipo?: string;
+  titulo: string;
+  origen: string;
+  datos: unknown;
+}): Promise<string> {
+  const data = {
+    tipo: opts.tipo,
+    subtipo: opts.subtipo,
+    titulo: opts.titulo,
+    origen: normalizarOrigen(opts.origen),
+    datos: JSON.stringify(opts.datos),
+  };
+
+  if (opts.id) {
+    const existente = await prisma.documentoGenerado.findUnique({
+      where: { id: opts.id },
+    });
+    if (existente) {
+      await prisma.documentoGenerado.update({ where: { id: opts.id }, data });
+      return opts.id;
+    }
+  }
+
+  const creado = await prisma.documentoGenerado.create({ data });
+  return creado.id;
+}
+
+export async function getDocumentosGenerados(): Promise<
+  DocumentoGeneradoResumen[]
+> {
+  const filas = await prisma.documentoGenerado.findMany({
+    orderBy: { updatedAt: "desc" },
+  });
+  return filas.map((f) => ({
+    id: f.id,
+    tipo: f.tipo,
+    subtipo: f.subtipo ?? undefined,
+    titulo: f.titulo,
+    origen: normalizarOrigen(f.origen),
+    fecha: formatDateShort(f.updatedAt),
+    ...partesDocumento(f.tipo, f.datos),
+  }));
+}
+
+export async function getDocumentoGeneradoById(
+  id: string,
+): Promise<DocumentoGeneradoDetalle | null> {
+  const f = await prisma.documentoGenerado.findUnique({ where: { id } });
+  if (!f) return null;
+  let datos: unknown = null;
+  try {
+    datos = JSON.parse(f.datos);
+  } catch {
+    datos = null;
+  }
+  return { tipo: f.tipo, subtipo: f.subtipo ?? undefined, datos };
+}
+
+export async function eliminarDocumentoGenerado(id: string): Promise<void> {
+  // deleteMany no lanza si el id ya no existe (idempotente).
+  await prisma.documentoGenerado.deleteMany({ where: { id } });
 }
 
 // ─── Biblioteca de soporte (documentos grandes) ───

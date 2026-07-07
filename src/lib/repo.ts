@@ -9,6 +9,10 @@ import type {
   Expediente,
 } from "./types";
 import type { KpisDashboard, Fuente } from "./repo.prisma";
+import type {
+  DocumentoGeneradoResumen,
+  DocumentoGeneradoDetalle,
+} from "./documentos/historial";
 
 /*
  * Capa de acceso a datos: punto de entrada único para las pantallas y las API.
@@ -19,6 +23,11 @@ import type { KpisDashboard, Fuente } from "./repo.prisma";
  */
 
 export type { KpisDashboard, Fuente } from "./repo.prisma";
+export type {
+  DocumentoGeneradoResumen,
+  DocumentoGeneradoDetalle,
+  OrigenDocumento,
+} from "./documentos/historial";
 
 async function impl() {
   return DEMO_MODE ? import("./repo.demo") : import("./repo.prisma");
@@ -62,6 +71,10 @@ export async function actualizarTituloExpediente(
   return (await impl()).actualizarTituloExpediente(id, titulo);
 }
 
+export async function eliminarExpediente(id: string): Promise<void> {
+  return (await impl()).eliminarExpediente(id);
+}
+
 export async function guardarDua(opts: {
   expedienteId: string;
   subtipo: string;
@@ -79,6 +92,44 @@ export async function getDuaGuardado(
 export async function getFuentes(): Promise<Fuente[]> {
   return (await impl()).getFuentes();
 }
+
+export async function guardarDocumentoGenerado(opts: {
+  id?: string;
+  tipo: string;
+  subtipo?: string;
+  titulo: string;
+  origen: string;
+  datos: unknown;
+}): Promise<string> {
+  return (await impl()).guardarDocumentoGenerado(opts);
+}
+
+export async function getDocumentosGenerados(): Promise<
+  DocumentoGeneradoResumen[]
+> {
+  return (await impl()).getDocumentosGenerados();
+}
+
+export async function getDocumentoGeneradoById(
+  id: string,
+): Promise<DocumentoGeneradoDetalle | null> {
+  return (await impl()).getDocumentoGeneradoById(id);
+}
+
+export async function eliminarDocumentoGenerado(id: string): Promise<void> {
+  return (await impl()).eliminarDocumentoGenerado(id);
+}
+
+/**
+ * Reglas de la base de conocimiento para el buscador de Normativa. El motor de
+ * reglas (motor/reglas.ts) ya despacha demo/Prisma internamente; el import es
+ * dinámico para que las pantallas que no consultan normativa no lo carguen.
+ */
+export async function getReglas() {
+  return (await import("./motor/reglas")).getReglas();
+}
+
+export type { ReglaNormativa } from "./motor/reglas";
 
 export async function crearFuente(opts: {
   titulo: string;

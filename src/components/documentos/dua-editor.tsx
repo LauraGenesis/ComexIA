@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Printer, Save, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,18 +12,53 @@ import {
   validarDua,
   type DuaDatos,
 } from "@/lib/documentos/dua";
+import type { OrigenDocumento } from "@/lib/documentos/historial";
+
+// Clave temporal donde el extractor deja el DUA precargado (sin base de datos).
+const PREFILL_KEY = "comexia:dua-prefill";
 
 export function DuaEditor({
   inicial,
   expedienteId,
+  prefill = false,
+  origen = "manual",
+  historialId,
 }: {
   inicial: DuaDatos;
   expedienteId?: string;
+  prefill?: boolean;
+  origen?: OrigenDocumento;
+  historialId?: string;
 }) {
   const [d, setD] = useState<DuaDatos>(inicial);
   const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Id en el historial: al re-guardar actualiza la misma entrada (no duplica).
+  const [historialActualId, setHistorialActualId] = useState<string | undefined>(
+    historialId,
+  );
+
+  // Al llegar desde la extracción con IA, aplicamos el DUA que el extractor dejó
+  // en sessionStorage y lo consumimos (una sola vez) para no re-aplicarlo.
+  useEffect(() => {
+    if (!prefill) return;
+    try {
+      const raw = sessionStorage.getItem(PREFILL_KEY);
+      if (raw) {
+        const datos = JSON.parse(raw) as Partial<DuaDatos>;
+        // Sincronizar estado desde un sistema externo (sessionStorage) al montar
+        // es un uso válido de efecto: corre solo en cliente, sin desajuste de
+        // hidratación (el render inicial usa `inicial` en servidor y cliente).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setD((prev) => ({ ...prev, ...datos }));
+      }
+    } catch {
+      // JSON corrupto o sessionStorage no disponible: se mantiene el inicial.
+    } finally {
+      sessionStorage.removeItem(PREFILL_KEY);
+    }
+  }, [prefill]);
 
   const problemas = useMemo(() => validarDua(d), [d]);
   const errores = problemas.filter((p) => p.nivel === "error");
@@ -52,6 +87,32 @@ export function DuaEditor({
         const j = await res.json().catch(() => ({}));
         throw new Error(j.error ?? "No se pudo guardar");
       }
+      setGuardado(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al guardar");
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function guardarHistorial() {
+    setGuardando(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/documentos/historial", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: historialActualId,
+          tipo: "DUA",
+          subtipo: d.tipo,
+          origen,
+          datos: d,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? "No se pudo guardar");
+      if (j.id) setHistorialActualId(j.id);
       setGuardado(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al guardar");
@@ -147,7 +208,7 @@ export function DuaEditor({
           <Button onClick={exportarPdf} variant="primary">
             <Printer className="size-4" /> Exportar PDF
           </Button>
-          {expedienteId && (
+          {expedienteId ? (
             <Button onClick={guardar} variant="secondary" disabled={guardando}>
               {guardando ? (
                 <>
@@ -156,6 +217,23 @@ export function DuaEditor({
               ) : (
                 <>
                   <Save className="size-4" /> Guardar en expediente
+                </>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={guardarHistorial}
+              variant="secondary"
+              disabled={guardando}
+            >
+              {guardando ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" /> Guardando…
+                </>
+              ) : (
+                <>
+                  <Save className="size-4" />{" "}
+                  {historialActualId ? "Actualizar en historial" : "Guardar en historial"}
                 </>
               )}
             </Button>

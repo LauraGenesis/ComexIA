@@ -9,7 +9,11 @@ export const dynamic = "force-dynamic";
 /** Ruta del editor para reabrir un documento del historial según su tipo. */
 function hrefEditor(tipo: string, id: string): string | null {
   if (tipo === "DUA") return `/app/documentos/dua?historial=${id}`;
-  return null; // Factura / Certificado: cuando tengan editor.
+  if (tipo === "Packing") return `/app/documentos/packing?historial=${id}`;
+  if (tipo === "Factura") return `/app/documentos/factura?historial=${id}`;
+  if (tipo === "Origen") return `/app/documentos/origen?historial=${id}`;
+  if (tipo === "Fitosanitario") return `/app/documentos/fitosanitario?historial=${id}`;
+  return null; // Otros documentos: cuando tengan editor.
 }
 
 export default async function HistorialPage() {
@@ -41,8 +45,8 @@ export default async function HistorialPage() {
             <Inbox className="size-8 text-faint" />
             <p className="font-medium text-ink">Aún no hay documentos</p>
             <p className="max-w-sm text-sm text-muted">
-              Genera un DUA desde el catálogo o subiendo tus documentos, y usa
-              «Guardar en historial» para que aparezca aquí.
+              Genera un documento desde el catálogo o subiendo tus documentos, y
+              usa «Guardar en historial» para que aparezca aquí.
             </p>
             <Link
               href="/app/documentos"

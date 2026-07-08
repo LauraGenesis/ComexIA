@@ -15,6 +15,24 @@
  */
 import { z } from "zod";
 import { duaVacio, type DuaDatos, type DuaTipo } from "./dua";
+import {
+  packingVacio,
+  lineaVacia,
+  type PackingDatos,
+  type PackingLinea,
+} from "./packing";
+import {
+  facturaVacia,
+  facturaLineaVacia,
+  type FacturaDatos,
+  type FacturaLinea,
+} from "./factura";
+import {
+  origenVacio,
+  origenLineaVacia,
+  type OrigenDatos,
+  type OrigenLinea,
+} from "./origen";
 
 /** Una parte interviniente (exportador, importador, notify…). */
 const parteSchema = z.object({
@@ -119,6 +137,149 @@ export function dossierADua(dos: Dossier): DuaDatos {
     divisaImporte: juntar([dos.divisa, dos.valorTotal], " "),
     modoTransporte: v(dos.modoTransporte),
     documentos: dos.documentosDetectados.join("\n"),
+  };
+}
+
+/**
+ * Proyecta el dossier canónico sobre el packing list. Sus líneas mapean 1:1 con
+ * las filas de la tabla (datos compartidos con el DUA: no se re-transcribe). Lo
+ * que no venga en el dossier queda con el valor por defecto de `packingVacio`.
+ */
+export function dossierAPacking(dos: Dossier): PackingDatos {
+  const base = packingVacio();
+  const v = (s?: string) => (s ?? "").trim();
+
+  const lineas: PackingLinea[] = dos.lineas.length
+    ? dos.lineas.map((l) => ({
+        ...lineaVacia(),
+        marcas: v(l.marcas),
+        tipoBulto: v(l.tipoBulto),
+        numBultos: v(l.bultos),
+        descripcion: v(l.descripcion),
+        cantidad: v(l.cantidad),
+        unidad: v(l.unidad),
+        pesoNeto: v(l.pesoNeto),
+        pesoBruto: v(l.pesoBruto),
+      }))
+    : base.lineas;
+
+  return {
+    ...base,
+    numero: v(dos.numeroFactura) ? `PL-${v(dos.numeroFactura)}` : base.numero,
+    fecha: v(dos.fechaFactura),
+    referenciaFactura: v(dos.numeroFactura),
+    exportadorNombre: v(dos.exportador?.nombre),
+    exportadorDireccion: juntar(
+      [dos.exportador?.direccion, dos.exportador?.pais],
+      " · ",
+    ),
+    importadorNombre: v(dos.importador?.nombre),
+    importadorDireccion: juntar(
+      [dos.importador?.direccion, dos.importador?.pais],
+      " · ",
+    ),
+    incoterm: v(dos.incoterm),
+    lugarEntrega: v(dos.lugarIncoterm),
+    modoTransporte: v(dos.modoTransporte),
+    numeroContenedor: v(dos.numeroContenedor),
+    puertoCarga: v(dos.puertoCarga),
+    puertoDescarga: v(dos.puertoDescarga),
+    paisOrigen: v(dos.paisOrigen) || v(dos.exportador?.pais),
+    paisDestino: v(dos.paisDestino) || v(dos.importador?.pais),
+    lineas,
+    totalBultosManual: v(dos.totalBultos),
+    pesoNetoTotalManual: v(dos.pesoNetoTotal),
+    pesoBrutoTotalManual: v(dos.pesoBrutoTotal),
+    volumenTotal: v(dos.volumen),
+  };
+}
+
+/**
+ * Proyecta el dossier canónico sobre la factura comercial. Sus líneas mapean
+ * 1:1 con las de la factura (datos compartidos con DUA y packing). El importe de
+ * cada línea se toma del valor total leído; si falta, el editor lo recalcula
+ * como cantidad × precio unitario.
+ */
+export function dossierAFactura(dos: Dossier): FacturaDatos {
+  const base = facturaVacia();
+  const v = (s?: string) => (s ?? "").trim();
+
+  const lineas: FacturaLinea[] = dos.lineas.length
+    ? dos.lineas.map((l) => ({
+        ...facturaLineaVacia(),
+        descripcion: v(l.descripcion),
+        hsTaric: v(l.hsTaric),
+        cantidad: v(l.cantidad),
+        unidad: v(l.unidad),
+        precioUnitario: v(l.valorUnitario),
+        importeManual: v(l.valorTotal),
+      }))
+    : base.lineas;
+
+  return {
+    ...base,
+    numero: v(dos.numeroFactura),
+    fecha: v(dos.fechaFactura),
+    vendedorNombre: v(dos.exportador?.nombre),
+    vendedorDireccion: juntar(
+      [dos.exportador?.direccion, dos.exportador?.pais],
+      " · ",
+    ),
+    vendedorNifVat: v(dos.exportador?.nifVat),
+    vendedorEori: v(dos.exportador?.eori),
+    compradorNombre: v(dos.importador?.nombre),
+    compradorDireccion: juntar(
+      [dos.importador?.direccion, dos.importador?.pais],
+      " · ",
+    ),
+    compradorNifVat: v(dos.importador?.nifVat),
+    incoterm: v(dos.incoterm),
+    lugarEntrega: v(dos.lugarIncoterm),
+    divisa: v(dos.divisa) || base.divisa,
+    modoTransporte: v(dos.modoTransporte),
+    paisOrigen: v(dos.paisOrigen) || v(dos.exportador?.pais),
+    paisDestino: v(dos.paisDestino) || v(dos.importador?.pais),
+    lineas,
+  };
+}
+
+/**
+ * Proyecta el dossier canónico sobre el certificado de origen. El país de origen
+ * (casilla 3) se toma del origen de las mercancías —o del país del exportador si
+ * no consta—, y las líneas mapean a la descripción de la casilla 6/7.
+ */
+export function dossierAOrigen(dos: Dossier): OrigenDatos {
+  const base = origenVacio();
+  const v = (s?: string) => (s ?? "").trim();
+
+  const lineas: OrigenLinea[] = dos.lineas.length
+    ? dos.lineas.map((l) => ({
+        ...origenLineaVacia(),
+        marcas: v(l.marcas),
+        numBultos: v(l.bultos),
+        tipoBulto: v(l.tipoBulto),
+        descripcion: v(l.descripcion),
+        cantidad: juntar([l.pesoNeto ? `${l.pesoNeto} kg` : "", l.cantidad], " · "),
+      }))
+    : base.lineas;
+
+  return {
+    ...base,
+    numero: v(dos.numeroFactura) ? `CO-${v(dos.numeroFactura)}` : base.numero,
+    exportadorNombre: v(dos.exportador?.nombre),
+    exportadorDireccion: v(dos.exportador?.direccion),
+    exportadorPais: v(dos.exportador?.pais) || v(dos.paisOrigen),
+    destinatarioNombre: v(dos.importador?.nombre),
+    destinatarioDireccion: juntar(
+      [dos.importador?.direccion, dos.importador?.pais],
+      " · ",
+    ),
+    paisOrigen: v(dos.paisOrigen) || v(dos.exportador?.pais),
+    transporte: juntar(
+      [dos.modoTransporte, juntar([dos.puertoCarga, dos.puertoDescarga], " → ")],
+      " · ",
+    ),
+    lineas,
   };
 }
 

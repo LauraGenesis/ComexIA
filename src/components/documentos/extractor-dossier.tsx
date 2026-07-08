@@ -13,10 +13,19 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { dossierADua, type Dossier } from "@/lib/documentos/dossier";
+import {
+  dossierADua,
+  dossierAPacking,
+  dossierAFactura,
+  dossierAOrigen,
+  type Dossier,
+} from "@/lib/documentos/dossier";
 
-// Clave temporal para pasar el DUA precargado al editor sin base de datos.
-const PREFILL_KEY = "comexia:dua-prefill";
+// Claves temporales para pasar el documento precargado al editor sin base de datos.
+const PREFILL_DUA_KEY = "comexia:dua-prefill";
+const PREFILL_PACKING_KEY = "comexia:packing-prefill";
+const PREFILL_FACTURA_KEY = "comexia:factura-prefill";
+const PREFILL_ORIGEN_KEY = "comexia:origen-prefill";
 
 type Estado =
   | { fase: "idle" }
@@ -82,11 +91,41 @@ export function ExtractorDossier() {
   function generarDua(dossier: Dossier) {
     const datos = dossierADua(dossier);
     try {
-      sessionStorage.setItem(PREFILL_KEY, JSON.stringify(datos));
+      sessionStorage.setItem(PREFILL_DUA_KEY, JSON.stringify(datos));
     } catch {
       // Sin sessionStorage el editor abre vacío; no es bloqueante.
     }
     router.push(`/app/documentos/dua?tipo=${datos.tipo}&desde=extraccion`);
+  }
+
+  function generarPacking(dossier: Dossier) {
+    const datos = dossierAPacking(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_PACKING_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/packing?desde=extraccion");
+  }
+
+  function generarFactura(dossier: Dossier) {
+    const datos = dossierAFactura(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_FACTURA_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/factura?desde=extraccion");
+  }
+
+  function generarOrigen(dossier: Dossier) {
+    const datos = dossierAOrigen(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_ORIGEN_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/origen?desde=extraccion");
   }
 
   function reiniciar() {
@@ -189,6 +228,9 @@ export function ExtractorDossier() {
           dossier={estado.dossier}
           fuente={estado.fuente}
           onGenerarDua={generarDua}
+          onGenerarPacking={generarPacking}
+          onGenerarFactura={generarFactura}
+          onGenerarOrigen={generarOrigen}
           onReiniciar={reiniciar}
         />
       )}
@@ -200,11 +242,17 @@ function ResultadoExtraccion({
   dossier,
   fuente,
   onGenerarDua,
+  onGenerarPacking,
+  onGenerarFactura,
+  onGenerarOrigen,
   onReiniciar,
 }: {
   dossier: Dossier;
   fuente: "ia" | "demo";
   onGenerarDua: (d: Dossier) => void;
+  onGenerarPacking: (d: Dossier) => void;
+  onGenerarFactura: (d: Dossier) => void;
+  onGenerarOrigen: (d: Dossier) => void;
   onReiniciar: () => void;
 }) {
   const confianza = Math.round((dossier.confianza ?? 0) * 100);
@@ -284,19 +332,47 @@ function ResultadoExtraccion({
             <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
           </button>
 
-          {["Factura comercial", "Certificado de origen"].map((nombre) => (
-            <div
-              key={nombre}
-              className="flex items-center justify-between rounded-lg border border-line bg-surface px-3 py-2.5 opacity-60"
-            >
-              <span>
-                <span className="block text-sm font-medium text-ink">
-                  {nombre}
-                </span>
-                <span className="block text-xs text-muted">Próximamente</span>
+          <button
+            type="button"
+            onClick={() => onGenerarPacking(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                Packing list
               </span>
-            </div>
-          ))}
+              <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarFactura(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                Factura comercial
+              </span>
+              <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarOrigen(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                Certificado de origen
+              </span>
+              <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
         </div>
       </div>
 

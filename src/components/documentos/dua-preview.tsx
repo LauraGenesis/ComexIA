@@ -42,7 +42,7 @@ function Row({ children }: { children: React.ReactNode }) {
 export function DuaPreview({ d }: { d: DuaDatos }) {
   const es = d.tipo === "exportacion";
   return (
-    <div className="dua-print mx-auto bg-white p-4 text-ink" id="dua-preview">
+    <div className="dua-print doc-print mx-auto bg-white p-4 text-ink" id="dua-preview">
       {/* Cabecera */}
       <div className="mb-1 flex items-end justify-between border-b-2 border-ink pb-1">
         <div>

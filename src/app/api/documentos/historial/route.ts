@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { guardarDocumentoGenerado } from "@/lib/repo";
 import { tituloDocumento } from "@/lib/documentos/historial";
 
+// Tipos de documento que pueden guardarse en el historial.
+const TIPOS_SOPORTADOS = ["DUA", "Packing", "Factura", "Origen"];
+
 /**
  * Registra (o actualiza, si llega `id`) un documento en el historial.
- * Hoy solo DUA; el catálogo es ampliable a Factura/Certificado sin tocar esto.
+ * Hoy DUA, Packing, Factura y Certificado de origen; ampliable sin tocar esto.
  */
 export async function POST(req: Request) {
   let body: {
@@ -20,7 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "JSON inválido" }, { status: 400 });
   }
 
-  if (body.tipo !== "DUA" || !body.datos) {
+  if (!body.tipo || !TIPOS_SOPORTADOS.includes(body.tipo) || !body.datos) {
     return NextResponse.json(
       { error: "Tipo de documento no soportado" },
       { status: 422 },

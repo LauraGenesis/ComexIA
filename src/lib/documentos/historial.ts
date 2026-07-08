@@ -6,6 +6,9 @@
  * partes de un documento a partir de sus datos, para no duplicar esa lógica.
  */
 import type { DuaDatos } from "./dua";
+import type { PackingDatos } from "./packing";
+import type { FacturaDatos } from "./factura";
+import type { OrigenDatos } from "./origen";
 
 export type OrigenDocumento = "manual" | "extraccion";
 
@@ -45,6 +48,24 @@ export function tituloDocumento(
     const parte = (d.destinatarioNombre || d.exportadorNombre || "").trim();
     return parte ? `${base} · ${parte}` : base;
   }
+  if (tipo === "Packing") {
+    const d = (datos ?? {}) as Partial<PackingDatos>;
+    const base = d.numero?.trim() ? `Packing list ${d.numero.trim()}` : "Packing list";
+    const parte = (d.importadorNombre || d.exportadorNombre || "").trim();
+    return parte ? `${base} · ${parte}` : base;
+  }
+  if (tipo === "Factura") {
+    const d = (datos ?? {}) as Partial<FacturaDatos>;
+    const base = d.numero?.trim() ? `Factura ${d.numero.trim()}` : "Factura comercial";
+    const parte = (d.compradorNombre || d.vendedorNombre || "").trim();
+    return parte ? `${base} · ${parte}` : base;
+  }
+  if (tipo === "Origen") {
+    const d = (datos ?? {}) as Partial<OrigenDatos>;
+    const base = "Certificado de origen";
+    const detalle = (d.paisOrigen || d.exportadorNombre || "").trim();
+    return detalle ? `${base} · ${detalle}` : base;
+  }
   return tipo;
 }
 
@@ -53,13 +74,36 @@ export function partesDocumento(
   tipo: string,
   datosJson: string,
 ): { exportador?: string; importador?: string } {
-  if (tipo !== "DUA") return {};
   try {
-    const d = JSON.parse(datosJson) as Partial<DuaDatos>;
-    return {
-      exportador: d.exportadorNombre?.trim() || undefined,
-      importador: d.destinatarioNombre?.trim() || undefined,
-    };
+    if (tipo === "DUA") {
+      const d = JSON.parse(datosJson) as Partial<DuaDatos>;
+      return {
+        exportador: d.exportadorNombre?.trim() || undefined,
+        importador: d.destinatarioNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "Packing") {
+      const d = JSON.parse(datosJson) as Partial<PackingDatos>;
+      return {
+        exportador: d.exportadorNombre?.trim() || undefined,
+        importador: d.importadorNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "Factura") {
+      const d = JSON.parse(datosJson) as Partial<FacturaDatos>;
+      return {
+        exportador: d.vendedorNombre?.trim() || undefined,
+        importador: d.compradorNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "Origen") {
+      const d = JSON.parse(datosJson) as Partial<OrigenDatos>;
+      return {
+        exportador: d.exportadorNombre?.trim() || undefined,
+        importador: d.destinatarioNombre?.trim() || undefined,
+      };
+    }
+    return {};
   } catch {
     return {};
   }

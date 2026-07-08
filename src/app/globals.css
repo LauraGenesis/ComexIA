@@ -215,7 +215,8 @@ body {
   max-width: 794px; /* ~A4 a 96dpi */
 }
 
-/* Impresión: el PDF (A4) solo contiene la vista previa del documento. */
+/* Impresión: el PDF (A4) solo contiene la vista previa del documento activo
+ * (DUA, packing list…), marcado con la clase compartida .doc-print. */
 @page {
   size: A4;
   margin: 10mm;
@@ -225,11 +226,11 @@ body {
   body * {
     visibility: hidden;
   }
-  #dua-preview,
-  #dua-preview * {
+  .doc-print,
+  .doc-print * {
     visibility: visible;
   }
-  #dua-preview {
+  .doc-print {
     position: absolute;
     left: 0;
     top: 0;

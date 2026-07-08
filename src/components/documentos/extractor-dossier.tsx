@@ -18,6 +18,7 @@ import {
   dossierAPacking,
   dossierAFactura,
   dossierAOrigen,
+  dossierAFito,
   type Dossier,
 } from "@/lib/documentos/dossier";
 
@@ -26,6 +27,7 @@ const PREFILL_DUA_KEY = "comexia:dua-prefill";
 const PREFILL_PACKING_KEY = "comexia:packing-prefill";
 const PREFILL_FACTURA_KEY = "comexia:factura-prefill";
 const PREFILL_ORIGEN_KEY = "comexia:origen-prefill";
+const PREFILL_FITO_KEY = "comexia:fitosanitario-prefill";
 
 type Estado =
   | { fase: "idle" }
@@ -126,6 +128,16 @@ export function ExtractorDossier() {
       // Sin sessionStorage el editor abre vacío; no es bloqueante.
     }
     router.push("/app/documentos/origen?desde=extraccion");
+  }
+
+  function generarFito(dossier: Dossier) {
+    const datos = dossierAFito(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_FITO_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/fitosanitario?desde=extraccion");
   }
 
   function reiniciar() {
@@ -231,6 +243,7 @@ export function ExtractorDossier() {
           onGenerarPacking={generarPacking}
           onGenerarFactura={generarFactura}
           onGenerarOrigen={generarOrigen}
+          onGenerarFito={generarFito}
           onReiniciar={reiniciar}
         />
       )}
@@ -245,6 +258,7 @@ function ResultadoExtraccion({
   onGenerarPacking,
   onGenerarFactura,
   onGenerarOrigen,
+  onGenerarFito,
   onReiniciar,
 }: {
   dossier: Dossier;
@@ -253,6 +267,7 @@ function ResultadoExtraccion({
   onGenerarPacking: (d: Dossier) => void;
   onGenerarFactura: (d: Dossier) => void;
   onGenerarOrigen: (d: Dossier) => void;
+  onGenerarFito: (d: Dossier) => void;
   onReiniciar: () => void;
 }) {
   const confianza = Math.round((dossier.confianza ?? 0) * 100);
@@ -370,6 +385,20 @@ function ResultadoExtraccion({
                 Certificado de origen
               </span>
               <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarFito(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                Certificado fitosanitario
+              </span>
+              <span className="block text-xs text-warning">Borrador</span>
             </span>
             <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
           </button>

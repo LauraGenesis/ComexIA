@@ -33,6 +33,12 @@ import {
   type OrigenDatos,
   type OrigenLinea,
 } from "./origen";
+import {
+  fitoVacio,
+  fitoLineaVacia,
+  type FitoDatos,
+  type FitoLinea,
+} from "./fitosanitario";
 
 /** Una parte interviniente (exportador, importador, notify…). */
 const parteSchema = z.object({
@@ -279,6 +285,46 @@ export function dossierAOrigen(dos: Dossier): OrigenDatos {
       [dos.modoTransporte, juntar([dos.puertoCarga, dos.puertoDescarga], " → ")],
       " · ",
     ),
+    lineas,
+  };
+}
+
+/**
+ * Proyecta el dossier canónico sobre el borrador de certificado fitosanitario.
+ * El país del exportador/importador alimenta las ONPF de origen/destino, y las
+ * líneas la descripción del envío. El NOMBRE BOTÁNICO no está en el dossier
+ * (dato que aporta el exportador), así que queda vacío y la validación lo avisa.
+ */
+export function dossierAFito(dos: Dossier): FitoDatos {
+  const base = fitoVacio();
+  const v = (s?: string) => (s ?? "").trim();
+
+  const lineas: FitoLinea[] = dos.lineas.length
+    ? dos.lineas.map((l) => ({
+        ...fitoLineaVacia(),
+        marcasBultos: juntar(
+          [l.marcas, juntar([l.bultos, l.tipoBulto], " ")],
+          " · ",
+        ),
+        nombreProducto: v(l.descripcion),
+        cantidad: juntar([l.pesoNeto ? `${l.pesoNeto} kg` : "", l.cantidad], " · "),
+      }))
+    : base.lineas;
+
+  return {
+    ...base,
+    onpfOrigen: v(dos.exportador?.pais) || v(dos.paisOrigen),
+    onpfDestino: v(dos.importador?.pais) || v(dos.paisDestino),
+    exportadorNombre: v(dos.exportador?.nombre),
+    exportadorDireccion: v(dos.exportador?.direccion),
+    destinatarioNombre: v(dos.importador?.nombre),
+    destinatarioDireccion: juntar(
+      [dos.importador?.direccion, dos.importador?.pais],
+      " · ",
+    ),
+    lugarOrigen: v(dos.paisOrigen) || v(dos.puertoCarga),
+    medioTransporte: v(dos.modoTransporte),
+    puntoEntrada: v(dos.puertoDescarga),
     lineas,
   };
 }

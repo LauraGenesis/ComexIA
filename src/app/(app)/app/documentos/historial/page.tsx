@@ -12,6 +12,7 @@ function hrefEditor(tipo: string, id: string): string | null {
   if (tipo === "Packing") return `/app/documentos/packing?historial=${id}`;
   if (tipo === "Factura") return `/app/documentos/factura?historial=${id}`;
   if (tipo === "Origen") return `/app/documentos/origen?historial=${id}`;
+  if (tipo === "Fitosanitario") return `/app/documentos/fitosanitario?historial=${id}`;
   return null; // Otros documentos: cuando tengan editor.
 }
 

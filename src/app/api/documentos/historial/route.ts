@@ -3,11 +3,12 @@ import { guardarDocumentoGenerado } from "@/lib/repo";
 import { tituloDocumento } from "@/lib/documentos/historial";
 
 // Tipos de documento que pueden guardarse en el historial.
-const TIPOS_SOPORTADOS = ["DUA", "Packing", "Factura", "Origen"];
+const TIPOS_SOPORTADOS = ["DUA", "Packing", "Factura", "Origen", "Fitosanitario"];
 
 /**
  * Registra (o actualiza, si llega `id`) un documento en el historial.
- * Hoy DUA, Packing, Factura y Certificado de origen; ampliable sin tocar esto.
+ * DUA, Packing, Factura, Certificado de origen y Fitosanitario (borrador);
+ * ampliable sin tocar esto.
  */
 export async function POST(req: Request) {
   let body: {

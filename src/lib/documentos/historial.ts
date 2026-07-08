@@ -9,6 +9,7 @@ import type { DuaDatos } from "./dua";
 import type { PackingDatos } from "./packing";
 import type { FacturaDatos } from "./factura";
 import type { OrigenDatos } from "./origen";
+import type { FitoDatos } from "./fitosanitario";
 
 export type OrigenDocumento = "manual" | "extraccion";
 
@@ -66,6 +67,12 @@ export function tituloDocumento(
     const detalle = (d.paisOrigen || d.exportadorNombre || "").trim();
     return detalle ? `${base} · ${detalle}` : base;
   }
+  if (tipo === "Fitosanitario") {
+    const d = (datos ?? {}) as Partial<FitoDatos>;
+    const base = "Certificado fitosanitario (borrador)";
+    const detalle = (d.destinatarioNombre || d.exportadorNombre || "").trim();
+    return detalle ? `${base} · ${detalle}` : base;
+  }
   return tipo;
 }
 
@@ -98,6 +105,13 @@ export function partesDocumento(
     }
     if (tipo === "Origen") {
       const d = JSON.parse(datosJson) as Partial<OrigenDatos>;
+      return {
+        exportador: d.exportadorNombre?.trim() || undefined,
+        importador: d.destinatarioNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "Fitosanitario") {
+      const d = JSON.parse(datosJson) as Partial<FitoDatos>;
       return {
         exportador: d.exportadorNombre?.trim() || undefined,
         importador: d.destinatarioNombre?.trim() || undefined,

@@ -18,7 +18,7 @@ export const CATALOGO: DocumentoCatalogo[] = [
   { id: "packing", nombre: "Packing list", categoria: "Comerciales", href: "/app/documentos/packing", disponible: true },
   { id: "dv1", nombre: "DV1 (valor en aduana)", categoria: "Aduaneros", disponible: false },
   { id: "origen", nombre: "Certificado de origen", categoria: "Origen", href: "/app/documentos/origen", disponible: true },
-  { id: "fitosanitario", nombre: "Certificado fitosanitario", categoria: "Sanitarios", disponible: false },
+  { id: "fitosanitario", nombre: "Certificado fitosanitario", categoria: "Sanitarios", href: "/app/documentos/fitosanitario", disponible: true },
   { id: "dgd", nombre: "Declaración de mercancías peligrosas (DGD)", categoria: "Peligrosas", disponible: false },
   { id: "bl", nombre: "Bill of Lading (B/L)", categoria: "Transporte", disponible: false },
   { id: "cmr", nombre: "CMR", categoria: "Transporte", disponible: false },

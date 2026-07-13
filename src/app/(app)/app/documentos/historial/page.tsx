@@ -13,6 +13,11 @@ function hrefEditor(tipo: string, id: string): string | null {
   if (tipo === "Factura") return `/app/documentos/factura?historial=${id}`;
   if (tipo === "Origen") return `/app/documentos/origen?historial=${id}`;
   if (tipo === "Fitosanitario") return `/app/documentos/fitosanitario?historial=${id}`;
+  if (tipo === "DGD") return `/app/documentos/dgd?historial=${id}`;
+  if (tipo === "DV1") return `/app/documentos/dv1?historial=${id}`;
+  if (tipo === "BL") return `/app/documentos/bl?historial=${id}`;
+  if (tipo === "CMR") return `/app/documentos/cmr?historial=${id}`;
+  if (tipo === "Transito") return `/app/documentos/transito?historial=${id}`;
   return null; // Otros documentos: cuando tengan editor.
 }
 

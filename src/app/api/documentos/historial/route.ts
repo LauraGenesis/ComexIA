@@ -3,7 +3,7 @@ import { guardarDocumentoGenerado } from "@/lib/repo";
 import { tituloDocumento } from "@/lib/documentos/historial";
 
 // Tipos de documento que pueden guardarse en el historial.
-const TIPOS_SOPORTADOS = ["DUA", "Packing", "Factura", "Origen", "Fitosanitario"];
+const TIPOS_SOPORTADOS = ["DUA", "Packing", "Factura", "Origen", "Fitosanitario", "DGD", "DV1", "BL", "CMR", "Transito"];
 
 /**
  * Registra (o actualiza, si llega `id`) un documento en el historial.

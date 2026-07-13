@@ -10,6 +10,11 @@ import type { PackingDatos } from "./packing";
 import type { FacturaDatos } from "./factura";
 import type { OrigenDatos } from "./origen";
 import type { FitoDatos } from "./fitosanitario";
+import type { DgdDatos } from "./dgd";
+import type { Dv1Datos } from "./dv1";
+import type { BlDatos } from "./bl";
+import type { CmrDatos } from "./cmr";
+import type { TransitoDatos } from "./transito";
 
 export type OrigenDocumento = "manual" | "extraccion";
 
@@ -73,6 +78,36 @@ export function tituloDocumento(
     const detalle = (d.destinatarioNombre || d.exportadorNombre || "").trim();
     return detalle ? `${base} · ${detalle}` : base;
   }
+  if (tipo === "DGD") {
+    const d = (datos ?? {}) as Partial<DgdDatos>;
+    const base = d.numero?.trim() ? `DGD ${d.numero.trim()}` : "Declaración de mercancías peligrosas";
+    const parte = (d.destinatarioNombre || d.expedidorNombre || "").trim();
+    return parte ? `${base} · ${parte}` : base;
+  }
+  if (tipo === "DV1") {
+    const d = (datos ?? {}) as Partial<Dv1Datos>;
+    const base = d.numero?.trim() ? `DV1 ${d.numero.trim()}` : "Declaración de valor (DV1)";
+    const parte = (d.compradorNombre || d.vendedorNombre || "").trim();
+    return parte ? `${base} · ${parte}` : base;
+  }
+  if (tipo === "BL") {
+    const d = (datos ?? {}) as Partial<BlDatos>;
+    const base = d.numero?.trim() ? `B/L ${d.numero.trim()}` : "Bill of Lading";
+    const parte = (d.consigneeNombre || d.shipperNombre || "").trim();
+    return parte ? `${base} · ${parte}` : base;
+  }
+  if (tipo === "CMR") {
+    const d = (datos ?? {}) as Partial<CmrDatos>;
+    const base = d.numero?.trim() ? `CMR ${d.numero.trim()}` : "Carta de porte CMR";
+    const parte = (d.destinatarioNombre || d.remitenteNombre || "").trim();
+    return parte ? `${base} · ${parte}` : base;
+  }
+  if (tipo === "Transito") {
+    const d = (datos ?? {}) as Partial<TransitoDatos>;
+    const base = `Tránsito ${d.tipo || "T1"}${d.numero?.trim() ? ` ${d.numero.trim()}` : ""}`;
+    const parte = (d.destinatarioNombre || d.obligadoNombre || d.expedidorNombre || "").trim();
+    return parte ? `${base} · ${parte}` : base;
+  }
   return tipo;
 }
 
@@ -114,6 +149,41 @@ export function partesDocumento(
       const d = JSON.parse(datosJson) as Partial<FitoDatos>;
       return {
         exportador: d.exportadorNombre?.trim() || undefined,
+        importador: d.destinatarioNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "DGD") {
+      const d = JSON.parse(datosJson) as Partial<DgdDatos>;
+      return {
+        exportador: d.expedidorNombre?.trim() || undefined,
+        importador: d.destinatarioNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "DV1") {
+      const d = JSON.parse(datosJson) as Partial<Dv1Datos>;
+      return {
+        exportador: d.vendedorNombre?.trim() || undefined,
+        importador: d.compradorNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "BL") {
+      const d = JSON.parse(datosJson) as Partial<BlDatos>;
+      return {
+        exportador: d.shipperNombre?.trim() || undefined,
+        importador: d.consigneeNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "CMR") {
+      const d = JSON.parse(datosJson) as Partial<CmrDatos>;
+      return {
+        exportador: d.remitenteNombre?.trim() || undefined,
+        importador: d.destinatarioNombre?.trim() || undefined,
+      };
+    }
+    if (tipo === "Transito") {
+      const d = JSON.parse(datosJson) as Partial<TransitoDatos>;
+      return {
+        exportador: d.expedidorNombre?.trim() || undefined,
         importador: d.destinatarioNombre?.trim() || undefined,
       };
     }

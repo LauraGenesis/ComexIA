@@ -19,6 +19,11 @@ import {
   dossierAFactura,
   dossierAOrigen,
   dossierAFito,
+  dossierADgd,
+  dossierADv1,
+  dossierABl,
+  dossierACmr,
+  dossierATransito,
   type Dossier,
 } from "@/lib/documentos/dossier";
 
@@ -28,6 +33,11 @@ const PREFILL_PACKING_KEY = "comexia:packing-prefill";
 const PREFILL_FACTURA_KEY = "comexia:factura-prefill";
 const PREFILL_ORIGEN_KEY = "comexia:origen-prefill";
 const PREFILL_FITO_KEY = "comexia:fitosanitario-prefill";
+const PREFILL_DGD_KEY = "comexia:dgd-prefill";
+const PREFILL_DV1_KEY = "comexia:dv1-prefill";
+const PREFILL_BL_KEY = "comexia:bl-prefill";
+const PREFILL_CMR_KEY = "comexia:cmr-prefill";
+const PREFILL_TRANSITO_KEY = "comexia:transito-prefill";
 
 type Estado =
   | { fase: "idle" }
@@ -140,6 +150,56 @@ export function ExtractorDossier() {
     router.push("/app/documentos/fitosanitario?desde=extraccion");
   }
 
+  function generarDgd(dossier: Dossier) {
+    const datos = dossierADgd(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_DGD_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/dgd?desde=extraccion");
+  }
+
+  function generarDv1(dossier: Dossier) {
+    const datos = dossierADv1(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_DV1_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/dv1?desde=extraccion");
+  }
+
+  function generarBl(dossier: Dossier) {
+    const datos = dossierABl(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_BL_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/bl?desde=extraccion");
+  }
+
+  function generarCmr(dossier: Dossier) {
+    const datos = dossierACmr(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_CMR_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/cmr?desde=extraccion");
+  }
+
+  function generarTransito(dossier: Dossier) {
+    const datos = dossierATransito(dossier);
+    try {
+      sessionStorage.setItem(PREFILL_TRANSITO_KEY, JSON.stringify(datos));
+    } catch {
+      // Sin sessionStorage el editor abre vacío; no es bloqueante.
+    }
+    router.push("/app/documentos/transito?desde=extraccion");
+  }
+
   function reiniciar() {
     setArchivos([]);
     setEstado({ fase: "idle" });
@@ -244,6 +304,11 @@ export function ExtractorDossier() {
           onGenerarFactura={generarFactura}
           onGenerarOrigen={generarOrigen}
           onGenerarFito={generarFito}
+          onGenerarDgd={generarDgd}
+          onGenerarDv1={generarDv1}
+          onGenerarBl={generarBl}
+          onGenerarCmr={generarCmr}
+          onGenerarTransito={generarTransito}
           onReiniciar={reiniciar}
         />
       )}
@@ -259,6 +324,11 @@ function ResultadoExtraccion({
   onGenerarFactura,
   onGenerarOrigen,
   onGenerarFito,
+  onGenerarDgd,
+  onGenerarDv1,
+  onGenerarBl,
+  onGenerarCmr,
+  onGenerarTransito,
   onReiniciar,
 }: {
   dossier: Dossier;
@@ -268,6 +338,11 @@ function ResultadoExtraccion({
   onGenerarFactura: (d: Dossier) => void;
   onGenerarOrigen: (d: Dossier) => void;
   onGenerarFito: (d: Dossier) => void;
+  onGenerarDgd: (d: Dossier) => void;
+  onGenerarDv1: (d: Dossier) => void;
+  onGenerarBl: (d: Dossier) => void;
+  onGenerarCmr: (d: Dossier) => void;
+  onGenerarTransito: (d: Dossier) => void;
   onReiniciar: () => void;
 }) {
   const confianza = Math.round((dossier.confianza ?? 0) * 100);
@@ -399,6 +474,74 @@ function ResultadoExtraccion({
                 Certificado fitosanitario
               </span>
               <span className="block text-xs text-warning">Borrador</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarDgd(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                Mercancías peligrosas (DGD)
+              </span>
+              <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarDv1(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                DV1 (valor en aduana)
+              </span>
+              <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarBl(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                Bill of Lading (B/L)
+              </span>
+              <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarCmr(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">CMR</span>
+              <span className="block text-xs text-success">Disponible</span>
+            </span>
+            <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onGenerarTransito(dossier)}
+            className="group flex items-center justify-between rounded-lg border border-brand-200 bg-surface px-3 py-2.5 text-left transition-shadow hover:shadow-md"
+          >
+            <span>
+              <span className="block text-sm font-medium text-ink">
+                Tránsito T1 / T2
+              </span>
+              <span className="block text-xs text-success">Disponible</span>
             </span>
             <ArrowRight className="size-4 text-brand-700 transition-transform group-hover:translate-x-0.5" />
           </button>
